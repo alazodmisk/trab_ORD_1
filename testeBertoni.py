@@ -1,39 +1,120 @@
 import sys
+
+
+#LISTAS GLOBAIS
 primarioLista: list
 publicadoraLista: list
 generoLista: list
-invertidaLista: list
+listaInvertida: list
 
-class indicePrimario(int, int):
+
+#ESTRUTURAS PARA GUARDAR AS CHAVES
+class identificador:
     indice: int
     offset: int
 
-class publicadora(str, int):
+class publicadora:
     nome: str
     indice: int #Primeiro caso de publicadora *nome*
 
-class genero(str, int):
+class genero:
     nome: str
     indice: int #Primeiro caso de genero *nome*
 
-class indicePrimario(int, int, int):
+class indicesInvertida:
     indice: int
     proxPublicadora: int
     proxGenero: int
 
 
 
+
+#FUNÇÕES AUXILIARES
+def busca_binaria(num:int, lista:list[indicesInvertida]) -> indicesInvertida:
+    inicio = 0
+    final = len(lista)
+    while inicio <= final:
+        media = (inicio+final)//2
+        if lista[media].indice == num:
+            return lista[media]
+        elif lista[media].indice >= num:
+            inicio = media + 1
+        else:
+            final = media - 1
+
+
+
+
+
 def construir_indices():
-    primarioLista = []
-    publicadoraLista = []
-    generoLista = []
-    invertidaLista = []
+    primarioLista:list[identificador] = [identificador(0,0)]
+    generoLista:list[genero] = []
+    publicadoraLista:list[publicadora] = []
+    listaInvertida:list[indicesInvertida] = []
 
     with open("games.dat", "rb") as games:
         buffer = games.read(2)
-        while buffer != EOF:
-            primarioLista.append
+        while buffer != "+":
+            tam = int.from_bytes(buffer)
+            buffer = games.read(buffer)
+            buffer = buffer.decode()
 
+            registro:list = buffer.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
+
+            indice = int(registro[0])
+            primarioLista = [identificador(indice, tam)] + primarioLista
+            for i in range(len(primarioLista) - 1):
+                if primarioLista[i].indice > primarioLista[i+1].indice:
+                    aux = primarioLista[i+1]
+                    primarioLista[i+1] = primarioLista[i]
+                    primarioLista[i] = aux
+                else:
+                    primarioLista[i+1].offset += tam
+
+            #INCLUSAO ORDENADA NA LISTA INVERTIDA
+            listaInvertida = [indicesInvertida(indice, -1, -1)] + listaInvertida
+            for i in range(len(listaInvertida)):
+                if listaInvertida[i].indice > listaInvertida[i+1].indice:
+                    aux = listaInvertida[i]
+                    listaInvertida[i] = listaInvertida[i+1]
+                    listaInvertida[i+1] = aux
+                else:
+                    break
+
+            #ATUALIZAÇAO DE INDICES EM RELACAO A GENERO
+            jaPresente = False
+            aux = registro[3]
+            for i in generoLista:
+                if i.nome == aux:
+                    jaPresente = True
+                    indice_aux = i.indice
+                    break
+
+            if jaPresente:
+                while indice != -1:
+                    indice = busca_binaria(indice_aux, listaInvertida).proxGenero
+                listaInvertida[indice].proxGenero = indice
+            else:
+                generoLista += [genero(aux, indice)]
+
+            #ATUALIZAÇAO DE INDICES EM RELACAO A PUBLICADORA
+            jaPresente = False
+            aux = registro[4]
+            for i in publicadoraLista:
+                if i.nome == aux:
+                    jaPresente = True
+                    indice_aux = i.indice
+                    break
+
+            if jaPresente:
+                while indice != -1:
+                    indice = busca_binaria(indice_aux, listaInvertida).proxPublicadora
+                listaInvertida[indice].proxPublicadora = indice
+            else:
+                publicadoraLista += [publicadora(aux, indice)]
+            
+                
+                    
 
 
 
