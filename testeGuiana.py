@@ -119,7 +119,7 @@ def busca_indice_primario():
     ''' abre o primario.ind
         trasnforma os elem do primario.ind em objetos e sobe no primarioLista
         iteração
-            procura indice primario
+            procura indice primario por meio de busca binária
             
         se achou
             verifica o byteoffsett
@@ -130,6 +130,24 @@ def busca_indice_primario():
             faz o seek no byte offset
             imprime o registro
     '''
+    i:int = 1
+
+    try:
+        with open("primario.ind", 'rb') as primario:
+            buffer = primario.read()##Não sei oq por aqui hihi
+            buffer = buffer.decode()
+            dados:list = buffer.split(',')
+            indice = identificador(dados[0], dados[1])
+            primarioLista[0] = indice
+            while buffer != '+':
+                buffer = primario.read()##Não sei oq por aqui hihi
+                buffer = buffer.decode()
+                dados:list = buffer.split(',')
+                indice = identificador(dados[0], dados[1])
+                primarioLista[i] = indice
+                i += 1
+    except:
+        print("Erro: Arquivo de índices primários não foi encontrado.")
 
     
 def busca_indice_genero():
