@@ -28,7 +28,6 @@ class indicesInvertida:
 
 
 
-
 #FUNÇÕES AUXILIARES DA CONSTRUÇÃO DE INDICES
 def busca_binaria(num:int, lista:list[indicesInvertida]) -> indicesInvertida:
     inicio = 0
@@ -112,48 +111,26 @@ def construir_indices():
                 publicadoraLista += [publicadora(aux, indice)]
             
                 
-                    
-
-
-
-    print("Iniciando a construção dos índices...")
-    open(games.dat)
-    buffer = games.read(1)
-    
-    with open("primario.ind", "w+") as primario:
-        primario.write("Conteúdo do arquivo de índice\n") ## Aqui vai uma iteração para ir adicionando as infos
-        primario.ind[anterior], primario.ind[tamanho anterior]+buffer
-
-    buffer = games.read(buffer)
-
-
-
-    with open("publicadora.ind", "w+") as publicadora:
-        
-        publicadora.write("Conteúdo do arquivo de índice\n") ## Aqui vai uma iteração para ir adicionando as infos
-        buffer2 = buffer[x,y] 
-        for i in publicadora.ind:
-            se achar -> pula
-            se nao -> adiciona o buffer2 com seu indice primario
-
-
-    with open("genero.ind", "w+") as genero:
-        genero.write("Conteúdo do arquivo de índice\n") ## Aqui vai uma iteração para ir adicionando as infos
-        buffer2 = buffer[x,y] 
-        for i in genero.ind:
-            se achar -> pula
-            se nao -> adiciona o buffer2 com seu indice primario
-
-    with open("listaInvertida.lst", "w+") as listaInvertida:
-        listaInvertida.write("Conteúdo do arquivo de índice\n") ## Aqui vai uma iteração para ir adicionando as infos
-
-    
-
 
 
 ##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
 def busca_indice_primario():
     print("Iniciando a busca...")
+    ''' abre o primario.ind
+        trasnforma os elem do primario.ind em objetos e sobe no primarioLista
+        iteração
+            procura indice primario
+            
+        se achou
+            verifica o byteoffsett
+        se não
+            fala que nao achou
+            
+        abre o games.dat
+            faz o seek no byte offset
+            imprime o registro
+    '''
+
     
 def busca_indice_genero():
     print("Iniciando a busca pelo indice secundário: Gênero...")
@@ -233,4 +210,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-    #OIIIII GUIANAAAA
