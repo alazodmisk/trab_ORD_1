@@ -1,6 +1,5 @@
 import sys
 
-
 #LISTAS GLOBAIS
 primarioLista: list
 publicadoraLista: list
@@ -9,30 +8,33 @@ listaInvertida: list
 
 
 #ESTRUTURAS PARA GUARDAR AS CHAVES
-class identificador:
-    indice: int
-    offset: int
+class Identificador:
+    def __init__(self, indice: int, offset: int):
+        self.indice = indice
+        self.offset = offset
 
-class publicadora:
-    nome: str
-    indice: int #Primeiro caso de publicadora *nome*
+class Publicadora:
+    def __init__(self, nome:str, indice: int):
+        self.nome = nome
+        self.indice = indice #Primeiro caso de publicadora *nome*
 
-class genero:
-    nome: str
-    indice: int #Primeiro caso de genero *nome*
+class Genero:
+    def __init__(self, nome:str, indice: int):
+        self.nome = nome
+        self.indice = indice #Primeiro caso de genero *nome*
 
-class indicesInvertida:
-    indice: int
-    proxGenero: int
-    proxPublicadora: int
-
+class IndicesInvertida:
+    def __init__(self, indice: int, proxGenero: int, proxPublicadora: int):
+        self.indice = indice
+        self.proxGenero = proxGenero
+        self.proxPublicadora = proxPublicadora
 
 
 
 #FUNÇÕES AUXILIARES
-def busca_binaria(num:int, lista:list[indicesInvertida] | list[identificador]) -> indicesInvertida | identificador | None:
+def busca_binaria(num:int, lista:list[IndicesInvertida] | list[Identificador]) -> IndicesInvertida | Identificador | None:
     inicio = 0
-    final = len(lista)
+    final = len(lista) - 1
     while inicio <= final:
         media = (inicio+final)//2
         if lista[media].indice == num:
@@ -44,80 +46,78 @@ def busca_binaria(num:int, lista:list[indicesInvertida] | list[identificador]) -
     return None
 
 
+def nome_presente(nome: str, lista: list[Genero] | list[Publicadora]) -> int:
+    for i in lista:
+        if i.nome == nome:
+            return i.indice
+    return -2
+
+def troca(i: int, lista: list[Identificador|IndicesInvertida]) -> None:
+    aux = lista[i+1]
+    lista[i+1] = lista[i]
+    lista[i] = aux
+
 
 def construir_indices():
-    primarioLista:list[identificador] = [identificador(0,0)]
-    generoLista:list[genero] = []
-    publicadoraLista:list[publicadora] = []
-    listaInvertida:list[indicesInvertida] = []
+    primarioLista:list[Identificador] = [Identificador(-1,0)]
+    generoLista:list[Genero] = []
+    publicadoraLista:list[Publicadora] = []
+    listaInvertida:list[IndicesInvertida] = []
 
-    with open("games.dat", "rb") as games:
-        buffer = games.read(2)
-        while buffer != "":
+    with open('games.dat', 'rb') as games:
+        buffer = games.read(1)
+        games.read(1)
+        while buffer != b'':
             tam = int.from_bytes(buffer)
-            buffer = games.read(tam).decode()
+            buffer = games.read(tam)
+            buffer = buffer.decode()
 
             registro:list[str] = buffer.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
 
-            indice = int(registro[0])
-            primarioLista = [identificador(indice, tam)] + primarioLista
+            indice = int(registro[0])                                                                                                                                                                                                                               
+            primarioLista = [Identificador(indice, tam)] + primarioLista
             for i in range(len(primarioLista) - 1):
                 if primarioLista[i].indice > primarioLista[i+1].indice:
-                    aux = primarioLista[i+1]
-                    primarioLista[i+1] = primarioLista[i]
-                    primarioLista[i] = aux
-                else:
+                    troca(i, primarioLista)
+                else:                       
                     primarioLista[i+1].offset += tam
 
+
             #INCLUSAO COMO ELEMENTO 0 NA LISTA INVERTIDA
-            listaInvertida = [indicesInvertida(indice, -1, -1)] + listaInvertida
+            listaInvertida = [IndicesInvertida(indice, -1, -1)] + listaInvertida
+
 
             #ATUALIZAÇAO DE INDICES EM RELACAO A GENERO
-            jaPresente = False
-            aux = registro[3]
-            for i in generoLista:
-                if i.nome == aux:
-                    jaPresente = True
-                    indice_aux = i.indice
-                    break
+            indiceProx = nome_presente(registro[3], generoLista)
 
-            if jaPresente:
-                indice = busca_binaria(indice_aux, listaInvertida).proxGenero
-                while indice != -1:
-                    indice = busca_binaria(indice, listaInvertida).proxGenero
+            while indiceProx > -1:
+                indiceProx = busca_binaria(indice, listaInvertida).proxGenero
+            if indiceProx == -1: #Último caso do Gênero
                 listaInvertida[indice].proxGenero = listaInvertida[0].indice
-            else:
-                generoLista += [genero(aux, indice)]
+            else: #indiceProx == -2 -> Primeiro caso do Gênero
+                generoLista = generoLista + [Genero(registro[3], indice)]
+
 
             #ATUALIZAÇAO DE INDICES EM RELACAO A PUBLICADORA
-            jaPresente = False
-            aux = registro[4]
-            for i in publicadoraLista:
-                if i.nome == aux:
-                    jaPresente = True
-                    indice_aux = i.indice
-                    break 
+            indiceProx = nome_presente(registro[4], publicadoraLista)
 
-            if jaPresente:
-                indice = busca_binaria(indice_aux, listaInvertida).proxPublicadora
-                while indice != -1:
-                    indice = busca_binaria(indice, listaInvertida).proxPublicadora
-                listaInvertida[indice].proxPublicadora = listaInvertida[0].indice
-            else:
-                publicadoraLista += [publicadora(aux, indice)]
+            while indiceProx > -1:
+                indiceProx = busca_binaria(indiceProx, listaInvertida).proxPublicadora
+            if indiceProx == -1: #Último caso da Publicadora 
+                listaInvertida[indiceProx].proxPublicadora = listaInvertida[0].indice
+            else: #indiceProx == -2 -> Primeiro caso da Publicadora
+                publicadoraLista = publicadoraLista + [Publicadora(registro[4], indice)]
 
 
-        #ORDENACAO DA LISTA INVERTIDA
-        for i in range(len(listaInvertida)):
-            if listaInvertida[i].indice > listaInvertida[i+1].indice:
-                aux = listaInvertida[i]
-                listaInvertida[i] = listaInvertida[i+1]
-                listaInvertida[i+1] = aux
-            else:
-                break
+            #ORDENACAO DA LISTA INVERTIDA
+            for i in range(len(listaInvertida)-1):
+                if listaInvertida[i].indice > listaInvertida[i+1].indice:
+                    troca(i, listaInvertida)
+                else:
+                    break
 
-
-        buffer = games.read(2)
+            buffer = games.read(1)
+            games.read(1)
 
     with open("primario.ind", "w+") as primario:
         for i in primarioLista:
@@ -127,17 +127,17 @@ def construir_indices():
     with open("publicadora.ind", "w+") as publicadora:
         for i in publicadoraLista:
             linha = i.nome + " " + str(i.indice)
-            primario.write(linha + "\n") 
+            publicadora.write(linha + "\n") 
             
     with open("genero.ind", "w+") as genero:
         for i in generoLista:
             linha = i.nome + " " + str(i.indice)
-            primario.write(linha + "\n") 
+            genero.write(linha + "\n") 
 
-    with open("listaInvertida.lst", "w+") as listaInvertida:
+    with open("listaInvertida.lst", "w+") as listaTotal:
         for i in listaInvertida:
             linha = str(i.indice) + " " + str(i.proxGenero) + " " + str(i.proxPublicadora)
-            primario.write(linha + "\n") 
+            listaTotal.write(linha + "\n") 
 
     
 
@@ -158,7 +158,6 @@ def main():
 
     flag = sys.argv[1]
 
-
     if flag == '-b':
         construir_indices()
 
@@ -176,6 +175,4 @@ def main():
         print(f"Flag '{flag}' não reconhecida.")
 
 if __name__ == "__main__":
-    main()
-
-    #OIIIII GUIANAAAA
+    main()                                                         
