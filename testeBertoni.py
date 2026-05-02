@@ -14,14 +14,14 @@ class Identificador:
         self.offset = offset
 
 class Publicadora:
-    def __init__(self, indice: int, nome:str):
-        self.indice = indice #Primeiro caso de publicadora *nome*
+    def __init__(self, posicao: int, nome:str):
+        self.posicao = posicao #Primeiro caso de publicadora *nome*
         self.nome = nome
         
 
 class Genero:
-    def __init__(self, indice: int, nome:str):
-        self.indice = indice #Primeiro caso de genero *nome*
+    def __init__(self, posicao: int, nome:str):
+        self.posicao = posicao #Primeiro caso de genero *nome*
         self.nome = nome
         
 
@@ -52,7 +52,7 @@ def busca_binaria(num:int, lista:list[IndicesInvertida] | list[Identificador]) -
 def nome_presente(nome: str, lista: list[Genero] | list[Publicadora]) -> int:
     for i in lista:
         if i.nome == nome:
-            return i.indice
+            return i.posicao
     return -1
 
 def troca(i: int, lista: list[Identificador|IndicesInvertida]) -> None:
@@ -62,74 +62,81 @@ def troca(i: int, lista: list[Identificador|IndicesInvertida]) -> None:
 
 
 
-
-
 def construir_indices():
-    primarioLista:list[Identificador] = [Identificador(-1,0)]
-    generoLista:list[Genero] = []
-    publicadoraLista:list[Publicadora] = []
-    listaInvertida:list[IndicesInvertida] = []
+    primarioLista: list[Identificador] = []
+    generoLista: list[Genero] = []
+    publicadoraLista: list[Publicadora] = []
+    listaInvertida: list[IndicesInvertida] = []
+    offset: int = 0
 
     with open('games.dat', 'rb') as games:
-        buffer = games.read(1)
-        games.read(1)
+        buffer = games.read(2)
+
         while buffer != b'':
-            tam = int.from_bytes(buffer)
-            buffer = games.read(tam)
-            buffer = buffer.decode()
+            tam = int.from_bytes(buffer, "little")
+            buffer = games.read(tam).decode()
 
             registro:list[str] = buffer.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
 
             indice = int(registro[0])
 
-            primarioLista = [Identificador(indice, tam)] + primarioLista
+            #primarioLista += [Identificador(indice, offset)]
+            #primarioLista.sort()
+            primarioLista = [Identificador(indice, offset)] + primarioLista
             for i in range(len(primarioLista) - 1):
-                if primarioLista[i].indice > primarioLista[i+1].indice and primarioLista[i+1].indice != -1:
-                    troca(i, primarioLista)
-                else:                       
-                    primarioLista[i+1].offset += tam
-
-
-            #INCLUSAO COMO ELEMENTO 0 NA LISTA INVERTIDA
-            listaInvertida = [IndicesInvertida(indice, -1, -1)] + listaInvertida
-
-
-            #ATUALIZAÇAO DE INDICES EM RELACAO A GENERO
-            indiceGen = nome_presente(registro[3], generoLista)
-
-            if indiceGen == -1: #Gênero nunca antes registrado
-                generoLista = generoLista + [Genero(indice, registro[3])]
-            else: 
-                auxGen = busca_binaria(indiceGen, listaInvertida)
-                while auxGen.proxGenero > -1:
-                    auxGen = busca_binaria(auxGen.proxGenero, listaInvertida)
-                busca_binaria(auxGen.indice, listaInvertida).proxGenero = indice
-
-                
-
-
-            #ATUALIZAÇAO DE INDICES EM RELACAO A PUBLICADORA
-            indicePubl = nome_presente(registro[4], publicadoraLista) 
-
-            if indicePubl == -1: #Publicadora nunca antes registrada
-                publicadoraLista = publicadoraLista + [Publicadora(indice, registro[4])]
-            else:
-                auxPubl = busca_binaria(indicePubl, listaInvertida)
-                while auxPubl.proxPublicadora > -1:
-                    auxPubl = busca_binaria(auxPubl.proxPublicadora, listaInvertida)
-                busca_binaria(auxPubl.indice, listaInvertida).proxPublicadora = indice
-
-
-
-            #ORDENACAO DA LISTA INVERTIDA
-            for i in range(len(listaInvertida)-1):
-                if listaInvertida[i].indice > listaInvertida[i+1].indice:
-                    troca(i, listaInvertida)
+                if primarioLista[i].indice > primarioLista[i+1].indice:
+                    aux = primarioLista[i+1]
+                    primarioLista[i+1] = primarioLista[i]
+                    primarioLista[i] = aux
                 else:
                     break
 
-            buffer = games.read(1)
-            games.read(1)
+            offset += tam + 2
+            finalLista = len(listaInvertida)
+
+            #ATUALIZAÇAO DE INDICES EM RELACAO A GENERO
+            posicaoGen = nome_presente(registro[3], generoLista)
+
+            if posicaoGen == -1:
+                generoLista += [Genero(finalLista, registro[3])]
+            else:
+                if listaInvertida[posicaoGen].indice > indice:
+                    for i in generoLista:
+                        if i.nome == registro[3]:
+                            i.posicao = finalLista
+                            break
+                else:
+                    while listaInvertida[posicaoGen].proxGenero != -1 and listaInvertida[listaInvertida[posicaoGen].proxGenero].indice < indice:
+                        posicaoGen = listaInvertida[posicaoGen].proxGenero
+                    
+                    aux = listaInvertida[posicaoGen].proxGenero
+                    listaInvertida[posicaoGen].proxGenero = finalLista
+                    posicaoGen = aux
+                
+
+            #ATUALIZAÇAO DE INDICES EM RELACAO A PUBLICADORA
+            posicaoPubl = nome_presente(registro[4], publicadoraLista) 
+
+            if posicaoPubl == -1: #Publicadora nunca antes registrada
+                publicadoraLista += [Publicadora(finalLista, registro[4])]
+            else:
+                if listaInvertida[posicaoPubl].indice > indice:
+                    for i in publicadoraLista:
+                        if i.nome == registro[4]:
+                            i.posicao = finalLista
+                            break
+                else:
+                    while listaInvertida[posicaoPubl].proxPublicadora != -1 and listaInvertida[listaInvertida[posicaoPubl].proxPublicadora].indice < indice:
+                        posicaoPubl = listaInvertida[posicaoPubl].proxPublicadora
+                    
+                    aux = listaInvertida[posicaoPubl].proxPublicadora
+                    listaInvertida[posicaoPubl].proxPublicadora = finalLista
+                    posicaoPubl = aux
+
+            listaInvertida += [IndicesInvertida(indice, posicaoGen, posicaoPubl)]
+
+            buffer = games.read(2)
+
 
     with open("primario.ind", "w+") as primario:
         for i in primarioLista:
@@ -138,12 +145,12 @@ def construir_indices():
 
     with open("publicadora.ind", "w+") as publicadora:
         for i in publicadoraLista:
-            linha = str(i.indice) + " " + i.nome
+            linha = str(i.posicao) + " " + i.nome
             publicadora.write(linha + "\n") 
             
     with open("genero.ind", "w+") as genero:
         for i in generoLista:
-            linha = str(i.indice) + " " + i.nome
+            linha = str(i.posicao) + " " + i.nome
             genero.write(linha + "\n") 
 
     with open("listaInvertida.lst", "w+") as listaTotal:
