@@ -6,9 +6,10 @@ class ChavePrincipal:
         self.offset = offset
 
 class ChaveSecundaria:
-    def __init__(self, indice: int, nome:str):
-        self.indice = indice #Prox caso de *nome*
+    def __init__(self, nome: str, indice: int):
         self.nome = nome 
+        self.indice = indice #Prox caso de *nome*
+        
 
 class Indices:
     def __init__(self, indice: int, proxGenero: int, proxPublicadora: int):
@@ -18,30 +19,35 @@ class Indices:
 
 
 #FUNÇÕES AUXILIARES
-def busca_binaria(argumento: int|str, lista: list[ChavePrincipal]|list[ChaveSecundaria]) -> int:
+def busca_binaria_chPrincipal(argumento: int, lista: list[ChavePrincipal]) -> int:
     inicio = 0
     final = len(lista) - 1
-    if type(argumento) == int:
-        while inicio <= final:
-            media = (inicio+final)//2
-            if lista[media].indice == argumento:
-                return media
-            elif lista[media].indice < argumento:
-                inicio = media + 1
-            else:
-                final = media - 1
-    else:
-        while inicio <= final:
-            media = (inicio+final)//2
-            if lista[media].nome == argumento:
-                return media
-            elif lista[media].nome < argumento:
-                inicio = media + 1
-            else:
-                final = media - 1
+
+    while inicio <= final:
+        media = (inicio+final)//2
+        if lista[media].indice == argumento:
+            return media
+        elif lista[media].indice < argumento:
+            inicio = media + 1
+        else:
+            final = media - 1
     return -1
 
-def organiza_lista(lista: list[ChavePrincipal]|list[ChaveSecundaria]) -> None:
+def busca_binaria_chSecundaria(argumento: str, lista: list[ChaveSecundaria]) -> int:
+    inicio = 0
+    final = len(lista) - 1
+
+    while inicio <= final:
+        media = (inicio+final)//2
+        if lista[media].nome == argumento:
+            return lista[media].indice
+        elif lista[media].nome < argumento:
+            inicio = media + 1
+        else:
+            final = media - 1
+    return -1
+
+def organiza_lista_chPrincipal(lista: list[ChavePrincipal]) -> None:
     for i in range(len(lista)-1):
         if lista[i].indice > lista[i+1].indice:
             aux = lista[i+1]
@@ -49,30 +55,38 @@ def organiza_lista(lista: list[ChavePrincipal]|list[ChaveSecundaria]) -> None:
             lista[i] = aux
         else:
             break
-
-def indice_secundaria(qualChave: int, posicao: int, idNovo: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
+        
+def organiza_lista_chSecundaria(lista: list[ChaveSecundaria]) -> None:
+    for i in range(len(lista)-1):
+        if lista[i].nome > lista[i+1].nome:
+            aux = lista[i+1]
+            lista[i+1] = lista[i]
+            lista[i] = aux
+        else:
+            break
+# 2, 0, 348, [[484, -1, -1]], [[Nintendo, 0]]
+def organiza_proxs(qualChave: int, posicaoLista: int, idNovo: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
     final = len(invertida)
+    posicao = lista[posicao].indice
 
     if invertida[posicao].indice > idNovo:
-        lista[posicao].indice = idNovo
-        posicao = invertida[posicao].indice
+        lista[posicao].indice = final
 
-    else:
-        if qualChave == 1:  #ANALISE DE GENERO
-            while invertida[posicao].proxGenero != -1 and invertida[invertida[posicao].proxGenero].indice < idNovo:
-                posicao = invertida[posicao].proxGenero
-            
-            aux = invertida[posicao].proxGenero
-            invertida[posicao].proxGenero = final
-            posicao = aux
+    elif qualChave == 1:#ANALISE DE GENERO  
+        while invertida[posicao].proxGenero != -1 and invertida[invertida[posicao].proxGenero].indice < idNovo:
+            posicao = invertida[posicao].proxGenero
+        
+        aux = invertida[posicao].proxGenero
+        invertida[posicao].proxGenero = final
+        posicao = aux
 
-        else:               #ANALISE DE PUBLICADORA
-            while invertida[posicao].proxPublicadora != -1 and invertida[invertida[posicao].proxPublicadora].indice < idNovo:
-                posicao = invertida[posicao].proxPublicadora
-            
-            aux = invertida[posicao].proxPublicadora
-            invertida[posicao].proxPublicadora = final
-            posicao = aux
+    else:               #ANALISE DE PUBLICADORA
+        while invertida[posicao].proxPublicadora != -1 and invertida[invertida[posicao].proxPublicadora].indice < idNovo:
+            posicao = invertida[posicao].proxPublicadora
+        
+        aux = invertida[posicao].proxPublicadora
+        invertida[posicao].proxPublicadora = final
+        posicao = aux
 
     return posicao
 
@@ -90,6 +104,25 @@ def construir_indices():
         buffer = games.read(2)
 
         while buffer != b'':
+
+            retorno = []
+            for i in generoLista:
+                retorno += [[i.nome, i.indice]]
+            print(retorno)
+            print()
+
+            retorno = []
+            for i in publicadoraLista:
+                retorno += [[i.nome, i.indice]]
+            print(retorno)
+            print()
+
+            retorno = []
+            for i in listaInvertida:
+                retorno += [[i.indice, i.proxGenero, i.proxPublicadora]]
+            print(retorno)
+            print()
+
             tam = int.from_bytes(buffer, "little")
             buffer = games.read(tam).decode()
 
@@ -98,24 +131,27 @@ def construir_indices():
             indice = int(registro[0])
 
             primarioLista = [ChavePrincipal(indice, offset)] + primarioLista
-            organiza_lista(primarioLista)
+            organiza_lista_chPrincipal(primarioLista)
             offset += tam + 2
 
+            finalLista = len(listaInvertida)
 
-            posicaoGen = busca_binaria(registro[3], generoLista)
+            print(f"{registro[0]}: {registro[3]} from {registro[4]}")
+
+            posicaoGen = busca_binaria_chSecundaria(registro[3], generoLista)
             if posicaoGen == -1:
-                generoLista = [ChaveSecundaria(len(listaInvertida), registro[3])] + generoLista
-                organiza_lista(generoLista)
+                generoLista = [ChaveSecundaria(registro[3], finalLista)] + generoLista
+                organiza_lista_chSecundaria(generoLista)
             else:
-                posicaoGen = indice_secundaria(1, posicaoGen, indice, listaInvertida, generoLista)
+                posicaoGen = organiza_proxs(1, posicaoGen, indice, listaInvertida, generoLista)
             
 
-            posicaoPubl = busca_binaria(registro[4], publicadoraLista)
+            posicaoPubl = busca_binaria_chSecundaria(registro[4], publicadoraLista)
             if posicaoPubl == -1:
-                publicadoraLista = [ChaveSecundaria(len(listaInvertida), registro[4])] + publicadoraLista
-                organiza_lista(publicadoraLista)
+                publicadoraLista = [ChaveSecundaria(registro[4], finalLista)] + publicadoraLista
+                organiza_lista_chSecundaria(publicadoraLista)
             else:
-                posicaoPubl = indice_secundaria(2, posicaoPubl, indice, listaInvertida, publicadoraLista)
+                posicaoPubl = organiza_proxs(2, posicaoPubl, indice, listaInvertida, publicadoraLista)
             
             listaInvertida += [Indices(indice, posicaoGen, posicaoPubl)]
 
