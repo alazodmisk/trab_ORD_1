@@ -1,72 +1,118 @@
 import sys
 
-#LISTAS GLOBAIS
-primarioLista: list
-publicadoraLista: list
-generoLista: list
-listaInvertida: list
-
-
-#ESTRUTURAS PARA GUARDAR AS CHAVES
-class Identificador:
+class ChavePrincipal:
     def __init__(self, indice: int, offset: int):
         self.indice = indice
         self.offset = offset
 
-class Publicadora:
-    def __init__(self, posicao: int, nome:str):
-        self.posicao = posicao #Primeiro caso de publicadora *nome*
-        self.nome = nome
-        
+class ChaveSecundaria:
+    def __init__(self, nome: str, indice: int):
+        self.nome = nome 
+        self.indice = indice #Prox caso de *nome*        
 
-class Genero:
-    def __init__(self, posicao: int, nome:str):
-        self.posicao = posicao #Primeiro caso de genero *nome*
-        self.nome = nome
-        
-
-class IndicesInvertida:
+class Indices:
     def __init__(self, indice: int, proxGenero: int, proxPublicadora: int):
         self.indice = indice
         self.proxGenero = proxGenero
         self.proxPublicadora = proxPublicadora
 
 
-
 #FUNÇÕES AUXILIARES
-def busca_binaria(num:int, lista:list[IndicesInvertida] | list[Identificador]) -> IndicesInvertida | Identificador:
-    inicio = 1
+'''Funções busca_binaria_chPrincipal(argumento, lista) e busca_binaria_chSecundaria(argumento,
+lista) utilizadas para encontrar a posição de um *argumento* em *lista*.
+Retorna -1 caso não esteja presente'''
+def busca_binaria_chPrincipal(argumento: int, lista: list[ChavePrincipal]) -> int:
+    inicio = 0
     final = len(lista) - 1
+
     while inicio <= final:
         media = (inicio+final)//2
-        if lista[media].indice == num:
-            return lista[media]
-        elif lista[media].indice < num:
+        if lista[media].indice == argumento:
+            return media
+        elif lista[media].indice < argumento:
             inicio = media + 1
         else:
             final = media - 1
-
-    raise ValueError("Jogo não presente cenário indevido, a nome_presente() foi usada incorretamente.")
-
-
-def nome_presente(nome: str, lista: list[Genero] | list[Publicadora]) -> int:
-    for i in lista:
-        if i.nome == nome:
-            return i.posicao
     return -1
 
-def troca(i: int, lista: list[Identificador|IndicesInvertida]) -> None:
-    aux = lista[i+1]
-    lista[i+1] = lista[i]
-    lista[i] = aux
+def busca_binaria_chSecundaria(argumento: str, lista: list[ChaveSecundaria]) -> int:
+    inicio = 0
+    final = len(lista) - 1
+
+    while inicio <= final:
+        media = (inicio+final)//2
+        if lista[media].nome == argumento:
+            return media
+        elif lista[media].nome < argumento:
+            inicio = media + 1
+        else:
+            final = media - 1
+    return -1
+
+
+'''Funções organiza_lista_chPrincipal(lista) e organiza_lista_chSecundaria(lista) utilizadas para
+organizar listas quando há inserção de uma nova chave em *lista*.
+Método de Insertion Sort, analisando a posição ideal de um novo ID inserido no começo.'''
+def organiza_lista_chPrincipal(lista: list[ChavePrincipal]) -> None:
+    for i in range(len(lista)-1):
+        if lista[i].indice > lista[i+1].indice:
+            aux = lista[i+1]
+            lista[i+1] = lista[i]
+            lista[i] = aux
+        else:
+            break
+        
+def organiza_lista_chSecundaria(lista: list[ChaveSecundaria]) -> None:
+    for i in range(len(lista)-1):
+        if lista[i].nome > lista[i+1].nome:
+            aux = lista[i+1]
+            lista[i+1] = lista[i]
+            lista[i] = aux
+        else:
+            break
+
+'''Existem dois casos de Organizacao:
+- Por Genero =       organiza_prox(*idNovo*, 1, *posicaoLista*, invertidaLista, generoLista)
+- Por Publicadora =  organiza_prox(*idNovo*, 2, *posicaoLista*, invertidaLista, publicadoraLista)
+
+dessa forma temos *qualChave* para diferenciar entre organizacao por Genero (1) e por Publicadora
+(2), para podermos atualizar os .prox de *invertida* e, caso o primeiro caso de uma chaveSecundaria
+seja alterado, atualizar a *lista*.
+Atualizações de acordo com o *idNovo* comecando por *posicaoLista* (primeiro caso de chaveSecundaria
+encontrado.)'''
+def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
+    
+    final = len(invertida)
+    posicao = lista[posicaoLista].indice
+
+    if invertida[posicao].indice > idNovo:
+        lista[posicaoLista].indice = final
+
+    elif qualChave == 1:    #ANALISE DE GENERO  
+        while invertida[posicao].proxGenero != -1 and invertida[invertida[posicao].proxGenero].indice < idNovo:
+            posicao = invertida[posicao].proxGenero
+        
+        aux = invertida[posicao].proxGenero
+        invertida[posicao].proxGenero = final
+        posicao = aux
+
+    else:                   #ANALISE DE PUBLICADORA
+        while invertida[posicao].proxPublicadora != -1 and invertida[invertida[posicao].proxPublicadora].indice < idNovo:
+            posicao = invertida[posicao].proxPublicadora
+        
+        aux = invertida[posicao].proxPublicadora
+        invertida[posicao].proxPublicadora = final
+        posicao = aux
+
+    return posicao
 
 
 
 def construir_indices():
-    primarioLista: list[Identificador] = []
-    generoLista: list[Genero] = []
-    publicadoraLista: list[Publicadora] = []
-    listaInvertida: list[IndicesInvertida] = []
+    primarioLista: list[ChavePrincipal] = []
+    generoLista: list[ChaveSecundaria] = []
+    publicadoraLista: list[ChaveSecundaria] = []
+    listaInvertida: list[Indices] = []
     offset: int = 0
 
     with open('games.dat', 'rb') as games:
@@ -80,61 +126,29 @@ def construir_indices():
 
             indice = int(registro[0])
 
-            #primarioLista += [Identificador(indice, offset)]
-            #primarioLista.sort()
-            primarioLista = [Identificador(indice, offset)] + primarioLista
-            for i in range(len(primarioLista) - 1):
-                if primarioLista[i].indice > primarioLista[i+1].indice:
-                    aux = primarioLista[i+1]
-                    primarioLista[i+1] = primarioLista[i]
-                    primarioLista[i] = aux
-                else:
-                    break
-
+            primarioLista = [ChavePrincipal(indice, offset)] + primarioLista
+            organiza_lista_chPrincipal(primarioLista)
             offset += tam + 2
+
             finalLista = len(listaInvertida)
 
-            #ATUALIZAÇAO DE INDICES EM RELACAO A GENERO
-            posicaoGen = nome_presente(registro[3], generoLista)
-
-            if posicaoGen == -1:
-                generoLista += [Genero(finalLista, registro[3])]
+            #posicaoGen refere-se ao próximo caso de Genero do novo registro.
+            posicaoGen = busca_binaria_chSecundaria(registro[3], generoLista)
+            if posicaoGen == -1:    #Nunca antes registrado
+                generoLista = [ChaveSecundaria(registro[3], finalLista)] + generoLista
+                organiza_lista_chSecundaria(generoLista)
             else:
-                if listaInvertida[posicaoGen].indice > indice:
-                    for i in generoLista:
-                        if i.nome == registro[3]:
-                            i.posicao = finalLista
-                            break
-                else:
-                    while listaInvertida[posicaoGen].proxGenero != -1 and listaInvertida[listaInvertida[posicaoGen].proxGenero].indice < indice:
-                        posicaoGen = listaInvertida[posicaoGen].proxGenero
-                    
-                    aux = listaInvertida[posicaoGen].proxGenero
-                    listaInvertida[posicaoGen].proxGenero = finalLista
-                    posicaoGen = aux
-                
-
-            #ATUALIZAÇAO DE INDICES EM RELACAO A PUBLICADORA
-            posicaoPubl = nome_presente(registro[4], publicadoraLista) 
-
-            if posicaoPubl == -1: #Publicadora nunca antes registrada
-                publicadoraLista += [Publicadora(finalLista, registro[4])]
+                posicaoGen = organiza_proxs(indice, 1, posicaoGen, listaInvertida, generoLista)
+            
+            #posicaoPubl refere-se ao próximo caso de Publicadora do novo registro.
+            posicaoPubl = busca_binaria_chSecundaria(registro[4], publicadoraLista)
+            if posicaoPubl == -1:   #Nunca antes registrada
+                publicadoraLista = [ChaveSecundaria(registro[4], finalLista)] + publicadoraLista
+                organiza_lista_chSecundaria(publicadoraLista)
             else:
-                if listaInvertida[posicaoPubl].indice > indice:
-                    for i in publicadoraLista:
-                        if i.nome == registro[4]:
-                            i.posicao = finalLista
-                            break
-                else:
-                    while listaInvertida[posicaoPubl].proxPublicadora != -1 and listaInvertida[listaInvertida[posicaoPubl].proxPublicadora].indice < indice:
-                        posicaoPubl = listaInvertida[posicaoPubl].proxPublicadora
-                    
-                    aux = listaInvertida[posicaoPubl].proxPublicadora
-                    listaInvertida[posicaoPubl].proxPublicadora = finalLista
-                    posicaoPubl = aux
-
-            listaInvertida += [IndicesInvertida(indice, posicaoGen, posicaoPubl)]
-
+                posicaoPubl = organiza_proxs(indice, 2, posicaoPubl, listaInvertida, publicadoraLista)
+            
+            listaInvertida += [Indices(indice, posicaoGen, posicaoPubl)]
             buffer = games.read(2)
 
 
@@ -145,12 +159,12 @@ def construir_indices():
 
     with open("publicadora.ind", "w+") as publicadora:
         for i in publicadoraLista:
-            linha = str(i.posicao) + " " + i.nome
+            linha = i.nome + " " + str(i.indice)
             publicadora.write(linha + "\n") 
             
     with open("genero.ind", "w+") as genero:
         for i in generoLista:
-            linha = str(i.posicao) + " " + i.nome
+            linha = i.nome + " " + str(i.indice)
             genero.write(linha + "\n") 
 
     with open("listaInvertida.lst", "w+") as listaTotal:
@@ -177,25 +191,6 @@ def busca_indice_primario():
             faz o seek no byte offset
             imprime o registro
     '''
-    i:int = 1
-
-    try:
-        with open("primario.ind", 'rb') as primario:
-            buffer = primario.read()##Não sei oq por aqui hihi
-            buffer = buffer.decode()
-            dados:list = buffer.split(',')
-            indice = Identificador(dados[0], dados[1])
-            primarioLista[0] = indice
-            while buffer != '+':
-                buffer = primario.read()##Não sei oq por aqui hihi
-                buffer = buffer.decode()
-                dados:list = buffer.split(',')
-                indice = Identificador(dados[0], dados[1])
-                primarioLista[i] = indice
-                i += 1
-    except:
-        print("Erro: Arquivo de índices primários não foi encontrado.")
-
     
 def busca_indice_genero():
     print("Iniciando a busca pelo indice secundário: Gênero...")
@@ -215,60 +210,48 @@ def insercao(argumento: str):
     
     escreve no offset de games.dat, ou seja no final
     com .sizeof do inserido'''
-    tamanho = len(argumento).to_bytes()
-    registro = argumento.split('|')
-    offset = 0 #N SEI COMO MECHER COM ISSO
+    # tamanho = len(argumento).to_bytes()
+    # registro = argumento.split('|')
+    # offset = 0 #N SEI COMO MECHER COM ISSO
 
-    with open("game.dat", 'r') as game:
-    with open("primario.ind", 'r') as p:
-        buffer = p.read().decode()
-        dados = buffer.split('\n')
-        dados.pop()
-        for i in dados:
-            i = i.split(' ', 1)
+    # with open("game.dat", 'r') as game:
+    # with open("primario.ind", 'r') as p:
+    #     buffer = p.read().decode()
+    #     dados = buffer.split('\n')
+    #     dados.pop()
+    #     for i in dados:
+    #         i = i.split(' ', 1)
         
-        inicio = 0
-        final = len(dados) - 1
-        posicao = -1
+    #     inicio = 0
+    #     final = len(dados) - 1
+    #     posicao = -1
 
-        if registro[0] != dados[inicio] and registro[0] != dados[final]:
-            if registro[0] < dados[inicio]:
-                dados = Identificador(registro[0], offset) + dados
-            elif registro[0] > dados[final]:
-                dados = dados + Identificador(registro[0], offset)
-            else: 
-                while inicio < final and posicao == -1:
-                    media = (inicio + final)//2
-                    if dados[media] == registro[0]:
-                        break
-                    if registro[0] > dados[media]:
-                        inicio = media + 1
-                        if registro[0] < dados[media+1]:
-                            posicao = media
+    #     if registro[0] != dados[inicio] and registro[0] != dados[final]:
+    #         if registro[0] < dados[inicio]:
+    #             dados = Identificador(registro[0], offset) + dados
+    #         elif registro[0] > dados[final]:
+    #             dados = dados + Identificador(registro[0], offset)
+    #         else: 
+    #             while inicio < final and posicao == -1:
+    #                 media = (inicio + final)//2
+    #                 if dados[media] == registro[0]:
+    #                     break
+    #                 if registro[0] > dados[media]:
+    #                     inicio = media + 1
+    #                     if registro[0] < dados[media+1]:
+    #                         posicao = media
                         
-                    if registro[0] < dados[media]:
-                        final = media - 1
-                        if registro[0] > dados[media-1]:
-                            posicao = media - 1
-                if posicao == -1:
-                    print()
-                else:
-                    dados = dados[:posicao] + Identificador(registro[0], EITAPORRA) + dados[posicao:]
-
-        
-                
-                
-                
-
-
-    
-
-
-
+    #                 if registro[0] < dados[media]:
+    #                     final = media - 1
+    #                     if registro[0] > dados[media-1]:
+    #                         posicao = media - 1
+    #             if posicao == -1:
+    #                 print()
+    #             else:
+    #                 dados = dados[:posicao] + Identificador(registro[0], EITAPORRA) + dados[posicao:]   
 
 def remocao():
     print("Iniciando a remoção...")
-
 
 
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
@@ -302,12 +285,8 @@ def executar_operacoes(nome_arquivo):
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
 
-
-
 def compactar_arquivo():
     print("Iniciando a compactação do arquivo...")
-
-
 
 def main():
     if len(sys.argv) < 2:
