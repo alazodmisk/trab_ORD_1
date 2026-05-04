@@ -5,7 +5,6 @@ import sys
 def busca_binaria(procurado: int|str, lista:list[tuple]) -> int:
     inicio = 0
     final = len(lista) - 1
-    print(f"{inicio} + {final}")
     while inicio <= final:
         media = (inicio+final)//2
         print(f"{inicio} + {final}//2 = {media}")
@@ -18,27 +17,22 @@ def busca_binaria(procurado: int|str, lista:list[tuple]) -> int:
     return -1
 
 def organiza_proxs(idnovo: int, novo: str, invertida: list[tuple], lista: list[tuple], i) -> int:
-    
     indiceLista = busca_binaria(novo, lista)
     posicao = len(invertida)
-    if indiceLista == -1:
-        print(lista)
-        print([(novo, posicao)] + lista)
-        lista = [(novo, posicao)] + lista #adiciona novo genero/publicadora em primeiro
-        organiza_lista(lista)
-        return -1
+    
+    indiceInvertida = lista[indiceLista][1]
+    if invertida[indiceInvertida][0] > idnovo:
+        lista[indiceLista] = (lista[indiceLista][0],posicao)
     else:
-        print("Nome ja existe")
-        indiceInvertida = lista[indiceLista][1]
-        if invertida[indiceInvertida][0] > idnovo:
-            lista[indiceLista][1] = posicao
+        while invertida[indiceInvertida][i] != -1 and invertida[invertida[indiceInvertida][i]][i] < idnovo:
+            indiceInvertida = invertida[indiceInvertida][i]
+        
+        aux = invertida[indiceInvertida][i]
+        if i == 1:
+            invertida[indiceInvertida] = (invertida[indiceInvertida][0], posicao, invertida[indiceInvertida][2])
         else:
-            while invertida[indiceInvertida][i] != -1 and invertida[invertida[indiceInvertida][i]].indice < idnovo:
-                indiceInvertida = invertida[indiceInvertida][i]
-            
-            aux = invertida[indiceInvertida][i]
-            invertida[indiceInvertida][i] = posicao
-            indiceInvertida = aux
+            invertida[indiceInvertida] = (invertida[indiceInvertida][0], invertida[indiceInvertida][2], posicao)
+        indiceInvertida = aux
 
     return indiceInvertida
 
@@ -71,8 +65,24 @@ def construir_indices():
             organiza_lista(primarioLista)
             offset += tam + 2
 
-            posicaoGen = organiza_proxs(indice, registro[3], listaInvertida, generoLista, 1)
-            posicaoPubl = organiza_proxs(indice, registro[4], listaInvertida, publicadoraLista, 2)
+
+            posicaoGen = busca_binaria(registro[3], generoLista)
+            if posicaoGen == -1:
+                print("novo Genero")
+                generoLista = [(registro[3], len(listaInvertida))] + generoLista #adiciona novo genero em primeiro
+                organiza_lista(generoLista)
+            else:
+                posicaoGen = organiza_proxs(indice, registro[3], listaInvertida, generoLista, 1)
+
+
+
+            posicaoPubl = busca_binaria(registro[4], publicadoraLista)
+            if posicaoPubl == -1:
+                print("nova Publicadora")
+                publicadoraLista = [(registro[4], len(listaInvertida))] + publicadoraLista #adiciona nova publicadora em primeiro
+                organiza_lista(publicadoraLista)
+            else:
+                posicaoPubl = organiza_proxs(indice, registro[4], listaInvertida, publicadoraLista, 2)
 
             listaInvertida += [(indice, posicaoGen, posicaoPubl)]
 
@@ -85,12 +95,12 @@ def construir_indices():
 
     with open("publicadora.ind", "w+") as publicadora:
         for i in publicadoraLista:
-            linha = str(i[0]) + " " + i[1]
+            linha = i[0] + " " + str(i[1])
             publicadora.write(linha + "\n") 
             
     with open("genero.ind", "w+") as genero:
         for i in generoLista:
-            linha = str(i[0]) + " " + i[1]
+            linha = i[0] + " " + str(i[1])
             genero.write(linha + "\n") 
 
     with open("listaInvertida.lst", "w+") as listaTotal:
