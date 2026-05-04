@@ -160,8 +160,147 @@ def construir_indices():
 
     
 
+##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
+def busca_indice_primario():
+    print("Iniciando a busca...")
+    ''' abre o primario.ind
+        trasnforma os elem do primario.ind em objetos e sobe no primarioLista
+        iteração
+            procura indice primario por meio de busca binária
+            
+        se achou
+            verifica o byteoffsett
+        se não
+            fala que nao achou
+            
+        abre o games.dat
+            faz o seek no byte offset
+            imprime o registro
+    '''
+    i:int = 1
+
+    try:
+        with open("primario.ind", 'rb') as primario:
+            buffer = primario.read()##Não sei oq por aqui hihi
+            buffer = buffer.decode()
+            dados:list = buffer.split(',')
+            indice = Identificador(dados[0], dados[1])
+            primarioLista[0] = indice
+            while buffer != '+':
+                buffer = primario.read()##Não sei oq por aqui hihi
+                buffer = buffer.decode()
+                dados:list = buffer.split(',')
+                indice = Identificador(dados[0], dados[1])
+                primarioLista[i] = indice
+                i += 1
+    except:
+        print("Erro: Arquivo de índices primários não foi encontrado.")
+
+    
+def busca_indice_genero():
+    print("Iniciando a busca pelo indice secundário: Gênero...")
+
+def busca_indice_publicadora():
+    print("Iniciando a busca pelo indice secundário: publicadora...")
+
+def insercao(argumento: str):
+    print("Iniciando a inserção...")
+    ''' 
+
+    Salva o offset como o tamanho de games.dat
+    Abre primario.ind, procura o Genero do meliante
+    caso ja exista -> faça manutençao dos id dos generos
+    caso nao -> add em genero.ind
+    msm coisa com publicadora
+    
+    escreve no offset de games.dat, ou seja no final
+    com .sizeof do inserido'''
+    tamanho = len(argumento).to_bytes()
+    registro = argumento.split('|')
+    offset = 0 #N SEI COMO MECHER COM ISSO
+
+    with open("game.dat", 'r') as game:
+    with open("primario.ind", 'r') as p:
+        buffer = p.read().decode()
+        dados = buffer.split('\n')
+        dados.pop()
+        for i in dados:
+            i = i.split(' ', 1)
+        
+        inicio = 0
+        final = len(dados) - 1
+        posicao = -1
+
+        if registro[0] != dados[inicio] and registro[0] != dados[final]:
+            if registro[0] < dados[inicio]:
+                dados = Identificador(registro[0], offset) + dados
+            elif registro[0] > dados[final]:
+                dados = dados + Identificador(registro[0], offset)
+            else: 
+                while inicio < final and posicao == -1:
+                    media = (inicio + final)//2
+                    if dados[media] == registro[0]:
+                        break
+                    if registro[0] > dados[media]:
+                        inicio = media + 1
+                        if registro[0] < dados[media+1]:
+                            posicao = media
+                        
+                    if registro[0] < dados[media]:
+                        final = media - 1
+                        if registro[0] > dados[media-1]:
+                            posicao = media - 1
+                if posicao == -1:
+                    print()
+                else:
+                    dados = dados[:posicao] + Identificador(registro[0], EITAPORRA) + dados[posicao:]
+
+        
+                
+                
+                
+
+
+    
+
+
+
+
+def remocao():
+    print("Iniciando a remoção...")
+
+
+
+##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
 def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
+    try:
+        with open(nome_arquivo, 'r', encoding='utf-8') as f:
+            for linha in f:
+                linha = linha.strip()
+
+                if not linha:
+                    continue  # pula linha vazia
+                
+                partes = linha.split(" ", 1)
+                operacao = partes[0]
+                argumento = partes[1]
+
+                if operacao == 'bp':
+                    busca_indice_primario()
+                elif operacao == 'bs1':
+                    busca_indice_genero()
+                elif operacao == 'bs2':
+                    busca_indice_publicadora()
+                elif operacao == 'i':
+                    insercao(argumento)
+                elif operacao == "r":
+                    remocao()
+                else:
+                    print("Comando não identificado. Por favor, verifique se o arquivo de operações.")    
+
+    except FileNotFoundError:
+        print("Erro: arquivo de operações não encontrado.")
 
 
 
