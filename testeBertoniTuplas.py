@@ -7,7 +7,6 @@ def busca_binaria(procurado: int|str, lista:list[tuple]) -> int:
     final = len(lista) - 1
     while inicio <= final:
         media = (inicio+final)//2
-        print(f"{inicio} + {final}//2 = {media}")
         if lista[media][0] == procurado:
             return media
         elif lista[media][0] < procurado:
@@ -68,17 +67,14 @@ def construir_indices():
 
             posicaoGen = busca_binaria(registro[3], generoLista)
             if posicaoGen == -1:
-                print("novo Genero")
                 generoLista = [(registro[3], len(listaInvertida))] + generoLista #adiciona novo genero em primeiro
                 organiza_lista(generoLista)
             else:
                 posicaoGen = organiza_proxs(indice, registro[3], listaInvertida, generoLista, 1)
 
 
-
             posicaoPubl = busca_binaria(registro[4], publicadoraLista)
             if posicaoPubl == -1:
-                print("nova Publicadora")
                 publicadoraLista = [(registro[4], len(listaInvertida))] + publicadoraLista #adiciona nova publicadora em primeiro
                 organiza_lista(publicadoraLista)
             else:
