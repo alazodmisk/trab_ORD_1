@@ -281,6 +281,8 @@ def remocao():
     print("Iniciando a remoção...")
 
 
+
+#AQUI TEM QUE ARRUMAR A ENTRADA PRA ACHAR AS OPERAÇÕES:
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
 def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
@@ -297,15 +299,15 @@ def executar_operacoes(nome_arquivo):
                 argumento = partes[1]
 
                 if operacao == 'bp':
-                    busca_indice_primario()
+                    busca_indice_primario(argumento)
                 elif operacao == 'bs1':
-                    busca_indice_genero()
+                    busca_indice_genero(argumento)
                 elif operacao == 'bs2':
-                    busca_indice_publicadora()
+                    busca_indice_publicadora(argumento)
                 elif operacao == 'i':
                     insercao(argumento)
                 elif operacao == "r":
-                    remocao()
+                    remocao(argumento)
                 else:
                     print("Comando não identificado. Por favor, verifique se o arquivo de operações.")    
 
