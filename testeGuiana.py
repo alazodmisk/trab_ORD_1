@@ -173,6 +173,42 @@ def construir_indices():
             listaTotal.write(linha + "\n") 
 
     
+##FUNÇÕES PARA CARREGAR OS .IND E PARA CARREGAR A LISTA INVERTIDA
+def carrega_indice_primario(primarioLista:list):
+    with open("primario.ind", 'r') as primario:
+        for linha in primario:
+            partes = linha.strip().split()
+            indice = int(partes[0])
+            offset = int(partes[1])
+            obj = ChavePrincipal(indice, offset)
+            primarioLista.append(obj)
+    return primarioLista
+        
+def carrega_indice_genero(generoLista:list):
+    with open("genero.ind", 'r') as genero:
+        for linha in genero:
+            linha = linha.strip()
+            if not linha:
+                continue
+            partes = linha.split()
+            nome = partes[0]
+            indice = int(partes[1])
+            generoLista.append(ChaveSecundaria(nome, indice))
+    return generoLista
+        
+def carregar_listaInvertida(listaInvertida):
+    with open("listaInvertida.lst", 'r') as arquivo:
+        for linha in arquivo:
+            linha = linha.strip()
+            if not linha:
+                continue
+            partes = linha.split()
+            indice = int(partes[0])
+            proxGenero = int(partes[1])
+            proxPublicadora = int(partes[2])
+            listaInvertida.append(Indices(indice, proxGenero, proxPublicadora))
+    return listaInvertida
+
 
 ##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
 def busca_indice_primario(argumento: int):
@@ -195,14 +231,7 @@ def busca_indice_primario(argumento: int):
     - lista contendo objetos ChavePrincipal com indice e offset correspondentes'''
 
     primarioLista: list[ChavePrincipal] = []
-
-    with open("primario.ind", 'r') as primario:
-        for linha in primario:
-            partes = linha.strip().split()
-            indice = int(partes[0])
-            offset = int(partes[1])
-            obj = ChavePrincipal(indice, offset)
-            primarioLista.append(obj)
+    primarioLista = carrega_indice_primario(primarioLista)
 
     pos = busca_binaria_chPrincipal(argumento, primarioLista)
 
@@ -219,11 +248,70 @@ def busca_indice_primario(argumento: int):
 
     
     
-def busca_indice_genero():
+def busca_indice_genero(argumento: int):
+    '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
+    de jogos que possuem um determinado gênero, com base no índice secundário
+    "genero.ind" e na lista invertida "listaInvertida.lst".
+
+    A função realiza os seguintes passos:
+        - Carrega o índice secundário de gêneros para uma lista de objetos
+        ChaveSecundaria.
+        - Realiza busca binária para encontrar o gênero desejado.
+        - Caso encontrado, obtém o índice inicial da lista invertida.
+        - Percorre a lista encadeada utilizando o campo proxGenero.
+        - Para cada índice primário encontrado:
+            - Realiza busca no índice primário para obter o offset.
+            - Acessa o arquivo "games.dat" com seek.
+            - Lê e imprime o registro correspondente.
+
+    Caso o gênero não seja encontrado, a função informa ao usuário.
+
+    Parâmetro:
+        - argumento: nome do gênero a ser buscado (string)
+
+    Não retorna valores, apenas imprime os registros encontrados.'''
+    
     print("Iniciando a busca pelo indice secundário: Gênero...")
+
+    primarioLista: list[ChavePrincipal] = []
+    listaInvertida: list[Indices] = []
+    generoLista: list[ChaveSecundaria] = []
+
+    generoLista = carrega_indice_genero(generoLista)
+    listaInvertida = carregar_listaInvertida(listaInvertida)
+    primarioLista = carrega_indice_primario(primarioLista)
+    
+    pos = busca_binaria_chSecundaria(argumento, generoLista)
+
+    if pos == -1:
+        print("Gênero não encontrado!")
+        return
+
+    atual = generoLista[pos].indice
+
+    while atual != -1:
+        no = listaInvertida[atual]
+
+        id_jogo = no.indice
+
+        posPrim = busca_binaria_chPrincipal(id_jogo, primarioLista)
+
+        if posPrim != -1:
+            offset = primarioLista[posPrim].offset
+
+            with open("games.dat", "rb") as games:
+                games.seek(offset)
+                tam = int.from_bytes(games.read(2), "little")
+                registro = games.read(tam).decode()
+                print(registro)
+
+        atual = no.proxGenero
+
 
 def busca_indice_publicadora():
     print("Iniciando a busca pelo indice secundário: publicadora...")
+
+    
 
 def insercao(argumento: str):
     print("Iniciando a inserção...")
