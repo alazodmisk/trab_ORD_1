@@ -1,6 +1,7 @@
+
 import sys
-'''Use <py Ofc.py -e comandos.txt> e veja chamando as funções no arquivo txt que é o mesmo que o professor disponibilizou.
-    Assim que tudo estiver funcionando certinho, é só passar as funções pra cá'''
+'''NÃO ESTÁ PRONTO AINDA'''
+
 
 def compactar_arquivo():
     print("Iniciando a compactação do arquivo...")
