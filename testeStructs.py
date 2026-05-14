@@ -87,6 +87,7 @@ dessa forma temos *qualChave* para diferenciar entre organizacao por Genero (1) 
 seja alterado, atualizar a *lista*.
 Atualizações de acordo com o *idNovo* comecando por *posicaoLista* (primeiro caso de chaveSecundaria
 encontrado.)'''
+
 def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
     
     final = len(invertida)
@@ -158,7 +159,6 @@ def construir_indices():
             listaInvertida += [Indices(indice, posicaoGen, posicaoPubl)]
             buffer = games.read(2)
 
-    quebra = b"\n"
 
     with open("primario.ind", "wb") as primario:
         for i in primarioLista:
@@ -195,11 +195,12 @@ def carrega_indice_primario(primarioLista:list[ChavePrincipal]):
 def carrega_indice_genero(generoLista:list):
     tamanho = struct.calcsize(fmtSecundario)
     with open("genero.ind", 'rb') as genero:
-        linha = struct.unpack(tamanho)
+        linha = genero.read(tamanho)
         while len(linha) == tamanho:
             buffer = struct.unpack(fmtSecundario, linha)
-            generoLista.append(ChaveSecundaria(buffer[0], buffer[1]))
-            linha = genero.read
+            nome = buffer[0].decode().strip('\x00')
+            generoLista.append(ChaveSecundaria(nome, buffer[1]))
+            linha = genero.read(tamanho)
     return generoLista
 
 def carrega_indice_publicadora(publicadoraLista:list):
@@ -211,11 +212,13 @@ def carrega_indice_publicadora(publicadoraLista:list):
     return publicadoraLista
         
 def carregar_listaInvertida(listaInvertida):
+    tamanho = struct.calcsize(fmtInvertido)
     with open("listaInvertida.lst", 'rb') as arquivo:
-        linha = struct.unpack(fmtInvertido, arquivo.read(struct.calcsize(fmtInvertido)))
-        while linha != None:
+        linha = arquivo.read(tamanho)
+        while len(linha) == tamanho:
+            buffer = struct.unpack(fmtInvertido, linha)
             listaInvertida.append(Indices(linha[0], linha[1], linha[2]))
-            linha = struct.unpack(fmtInvertido, arquivo.read(struct.calcsize(fmtInvertido)))
+            linha = arquivo.read(tamanho)
     return listaInvertida
 
 
@@ -256,8 +259,7 @@ def busca_indice_primario(argumento: int):
         print("Registro não encontrado! <erro de argumento (índice) inválido>")
 
     
-    
-def busca_indice_genero(argumento: str):
+
     '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
     de jogos que possuem um determinado gênero, com base no índice secundário
     "genero.ind" e na lista invertida "listaInvertida.lst".
@@ -279,6 +281,7 @@ def busca_indice_genero(argumento: str):
         - argumento: nome do gênero a ser buscado (string)
 
     Não retorna valores, apenas imprime os registros encontrados.'''
+def busca_indice_genero(argumento: str):
     
     print("Iniciando a busca pelo indice secundário: Gênero...")
 
@@ -299,8 +302,23 @@ def busca_indice_genero(argumento: str):
     
     atual = generoLista[pos].indice
 
+    visitados = set()
+
     while atual != -1:
+
+        if atual in visitados:
+            print("CICLO DETECTADO EM:", atual)
+            break
+
+        visitados.add(atual)
+
         no = listaInvertida[atual]
+
+        print(
+            "ATUAL:", atual,
+            "ID:", no.indice,
+            "PROX:", no.proxGenero
+        )
 
         id_jogo = no.indice
 
