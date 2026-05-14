@@ -2,7 +2,7 @@ import sys
 import struct
 
 
-fmtPrimario = '2H'
+fmtPrimario = '<HI'
 fmtSecundario = '30sB'
 fmtInvertido = '3h'
 
@@ -162,56 +162,60 @@ def construir_indices():
 
     with open("primario.ind", "wb") as primario:
         for i in primarioLista:
-            linha = struct.pack('2H',i.indice, i.offset)
-            primario.write(linha + quebra) 
+            linha = struct.pack(fmtPrimario, i.indice, i.offset)
+            primario.write(linha) 
 
     with open("publicadora.ind", "wb") as publicadora:
         for i in publicadoraLista:
-            linha = struct.pack('30sH',i.nome, i.indice)
+            linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
             publicadora.write(linha) 
             
     with open("genero.ind", "wb") as genero:
         for i in generoLista:
-            linha = struct.pack('30sH',i.nome, i.indice)
+            linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
             genero.write(linha) 
 
     with open("listaInvertida.lst", "wb") as listaTotal:
         for i in listaInvertida:
-            linha = struct.pack('3h', i.indice, i.proxGenero, i.proxPublicadora)
+            linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
             listaTotal.write(linha)  
 
     
 ##FUNÇÕES PARA CARREGAR OS .IND E PARA CARREGAR A LISTA INVERTIDA
-def carrega_indice_primario(primarioLista:list):
+def carrega_indice_primario(primarioLista:list[ChavePrincipal]):
+    tamanho = struct.calcsize(fmtPrimario)
     with open("primario.ind", 'rb') as primario:
-        linha = struct.unpack('2H', primario)
-        while linha != None:
-            primarioLista.append(ChavePrincipal(linha[0], linha[1]))
-            linha = struct.unpack('2H', primario)
+        linha = primario.read(tamanho)
+        while len(linha) == tamanho:
+            buffer = struct.unpack(fmtPrimario, linha)
+            primarioLista.append(ChavePrincipal(buffer[0], buffer[1]))
+            linha = primario.read(tamanho)
     return primarioLista
         
 def carrega_indice_genero(generoLista:list):
+    tamanho = struct.calcsize(fmtSecundario)
     with open("genero.ind", 'rb') as genero:
-        linha = struct.unpack('30sH', genero)
-        while linha != None:
-            generoLista.append(ChaveSecundaria(linha[0], linha[1]))
-            linha = struct.unpack('30sH', genero)
+        linha = struct.unpack(tamanho)
+        while len(linha) == tamanho:
+            buffer = struct.unpack(fmtSecundario, linha)
+            generoLista.append(ChaveSecundaria(buffer[0], buffer[1]))
+            linha = genero.read
     return generoLista
 
 def carrega_indice_publicadora(publicadoraLista:list):
-    with open("genero.ind", 'rb') as publicaodra:
-        linha = struct.unpack('30sH', publicaodra)
+    with open("genero.ind", 'rb') as publicadora:
+        linha = struct.unpack(fmtSecundario, publicadora.read(struct.calcsize(fmtSecundario)))
         while linha != None:
             publicadoraLista.append(ChaveSecundaria(linha[0], linha[1]))
-            linha = struct.unpack('30sH', publicaodra)
+            linha = struct.unpack(fmtSecundario, publicadora.read(struct.calcsize(fmtSecundario)))
     return publicadoraLista
         
 def carregar_listaInvertida(listaInvertida):
     with open("listaInvertida.lst", 'rb') as arquivo:
-        linha = struct.unpack('30sH', arquivo)
+        linha = struct.unpack(fmtInvertido, arquivo.read(struct.calcsize(fmtInvertido)))
         while linha != None:
             listaInvertida.append(Indices(linha[0], linha[1], linha[2]))
-            linha = struct.unpack('30sH', arquivo)
+            linha = struct.unpack(fmtInvertido, arquivo.read(struct.calcsize(fmtInvertido)))
     return listaInvertida
 
 
@@ -426,9 +430,9 @@ def executar_operacoes(nome_arquivo):
                 argumento = partes[1]
 
                 if operacao == 'bp':
-                    busca_indice_primario(argumento)
+                    busca_indice_primario(int(argumento))
                 elif operacao == 'bs1':
-                    busca_indice_genero(argumento)
+                    busca_indice_genero(str(argumento))
                 elif operacao == 'bs2':
                     busca_indice_publicadora(argumento)
                 elif operacao == 'i':
