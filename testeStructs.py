@@ -87,7 +87,6 @@ dessa forma temos *qualChave* para diferenciar entre organizacao por Genero (1) 
 seja alterado, atualizar a *lista*.
 Atualizações de acordo com o *idNovo* comecando por *posicaoLista* (primeiro caso de chaveSecundaria
 encontrado.)'''
-
 def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
     
     final = len(invertida)
@@ -204,11 +203,14 @@ def carrega_indice_genero(generoLista:list):
     return generoLista
 
 def carrega_indice_publicadora(publicadoraLista:list):
-    with open("genero.ind", 'rb') as publicadora:
-        linha = struct.unpack(fmtSecundario, publicadora.read(struct.calcsize(fmtSecundario)))
-        while linha != None:
-            publicadoraLista.append(ChaveSecundaria(linha[0], linha[1]))
-            linha = struct.unpack(fmtSecundario, publicadora.read(struct.calcsize(fmtSecundario)))
+    tamanho = struct.calcsize(fmtSecundario)
+    with open("publicadora.ind", 'rb') as publicadora:
+        linha = publicadora.read(tamanho)
+        while len(linha) == tamanho:
+            buffer = struct.unpack(fmtSecundario, linha)
+            nome = buffer[0].decode().strip('\x00')
+            publicadoraLista.append(ChaveSecundaria(nome, buffer[1]))
+            linha = publicadora.read(tamanho)
     return publicadoraLista
         
 def carregar_listaInvertida(listaInvertida):
@@ -217,7 +219,7 @@ def carregar_listaInvertida(listaInvertida):
         linha = arquivo.read(tamanho)
         while len(linha) == tamanho:
             buffer = struct.unpack(fmtInvertido, linha)
-            listaInvertida.append(Indices(linha[0], linha[1], linha[2]))
+            listaInvertida.append(Indices(buffer[0], buffer[1], buffer[2]))
             linha = arquivo.read(tamanho)
     return listaInvertida
 
@@ -258,6 +260,8 @@ def busca_indice_primario(argumento: int):
     else:
         print("Registro não encontrado! <erro de argumento (índice) inválido>")
 
+    print("=============================")
+
     
 
     '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
@@ -282,7 +286,6 @@ def busca_indice_primario(argumento: int):
 
     Não retorna valores, apenas imprime os registros encontrados.'''
 def busca_indice_genero(argumento: str):
-    
     print("Iniciando a busca pelo indice secundário: Gênero...")
 
     primarioLista: list[ChavePrincipal] = []
@@ -290,7 +293,7 @@ def busca_indice_genero(argumento: str):
     generoLista: list[ChaveSecundaria] = []
 
     generoLista = carrega_indice_genero(generoLista)
-    
+
     pos = busca_binaria_chSecundaria(argumento, generoLista)
 
     if pos == -1:
@@ -299,41 +302,23 @@ def busca_indice_genero(argumento: str):
 
     listaInvertida = carregar_listaInvertida(listaInvertida)
     primarioLista = carrega_indice_primario(primarioLista)
-    
     atual = generoLista[pos].indice
 
-    visitados = set()
-
     while atual != -1:
-
-        if atual in visitados:
-            print("CICLO DETECTADO EM:", atual)
-            break
-
-        visitados.add(atual)
-
         no = listaInvertida[atual]
-
-        print(
-            "ATUAL:", atual,
-            "ID:", no.indice,
-            "PROX:", no.proxGenero
-        )
-
         id_jogo = no.indice
-
         posPrim = busca_binaria_chPrincipal(id_jogo, primarioLista)
 
         if posPrim != -1:
             offset = primarioLista[posPrim].offset
-
             with open("games.dat", "rb") as games:
                 games.seek(offset)
                 tam = int.from_bytes(games.read(2), "little")
                 registro = games.read(tam).decode()
                 print(registro)
-
         atual = no.proxGenero
+
+    print("=============================")
 
 
 def busca_indice_publicadora(argumento: str):
@@ -342,7 +327,7 @@ def busca_indice_publicadora(argumento: str):
     listaInvertida: list[Indices] = []
     publicadoraLista: list[ChaveSecundaria] = []
 
-    publicadoraLista = carrega_indice_genero(publicadoraLista)
+    publicadoraLista = carrega_indice_publicadora(publicadoraLista)
     
     pos = busca_binaria_chSecundaria(argumento, publicadoraLista)
 
@@ -370,9 +355,10 @@ def busca_indice_publicadora(argumento: str):
                 tam = int.from_bytes(games.read(2), "little")
                 registro = games.read(tam).decode()
                 print(registro)
-
         atual = no.proxPublicadora
     
+    print("=============================")
+
 
 def insercao(argumento: str):
     print("Iniciando a inserção...")
