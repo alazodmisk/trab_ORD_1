@@ -7,6 +7,16 @@ fmtSecundario = '30sB'
 fmtInvertido = '3h'
 
 
+class RegistroJogo:
+    def __init__(self, Tamanho:int, ID:int, Nome:str, Ano:int, Genero:str, Publicadora:str, Plataforma:str):
+        self.Tamanho = Tamanho
+        self.ID = ID
+        self.Nome = Nome
+        self.Ano = Ano
+        self.Genero = Genero
+        self.Publicadora = Publicadora
+        self.Plataforma = Plataforma
+
 class ChavePrincipal:
     def __init__(self, indice: int, offset: int):
         self.indice = indice
@@ -262,7 +272,7 @@ def busca_indice_primario(argumento: int, primarioLista:list):
     print("=============================")
 
     
-
+def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, primarioLista:list):
     '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
     de jogos que possuem um determinado gênero, com base no índice secundário
     "genero.ind" e na lista invertida "listaInvertida.lst".
@@ -284,7 +294,6 @@ def busca_indice_primario(argumento: int, primarioLista:list):
         - argumento: nome do gênero a ser buscado (string)
 
     Não retorna valores, apenas imprime os registros encontrados.'''
-def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, primarioLista:list):
     print("Iniciando a busca pelo indice secundário: Gênero...")
 
     pos = busca_binaria_chSecundaria(argumento, generoLista)
