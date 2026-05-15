@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 import struct
 
@@ -285,10 +286,14 @@ def busca_indice_publicadora(argumento: str, listas:list):
     print("=============================")
 
 
-def insercao(listas: list[list], argumento: str, finalGames: int):
+def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
     registro = argumento.split('|')
     indice = int(registro[0])
-    print(f'Inserção do registro de chave "{indice}" ({len(argumento)} bytes)')
+
+    games.seek(0, os.SEEK_END)
+    finalGames = games.tell()
+    
+    print(f'Inserção do registro de chave "{indice}"')
 
     pos = busca_binaria_chPrincipal(indice, listas[0])
 
@@ -313,9 +318,15 @@ def insercao(listas: list[list], argumento: str, finalGames: int):
 
         listas[3].append(Indices(indice, posGen, posPubl))
 
+        games.write(int.to_bytes(len(argumento)))
+        games.write(argumento.encode())
+
+        construir_indices()
+
     else:
         print("Registro descartado (IDs duplicados não são aceitos).")
     
+
 
 def remocao(games: list[io.BufferedReader|io.BufferedWriter], listas: list[list], argumento: int):
     print(f'Remoção do registro de chave "{argumento}"')
@@ -327,7 +338,12 @@ def remocao(games: list[io.BufferedReader|io.BufferedWriter], listas: list[list]
 
         games[0].seek(offset)
         tamanho = int.from_bytes(games[0].read(2))
-        registro = games[0].read(tamanho)
+        registro = games[0].read(tamanho).split()
+
+        genero = registro[3]
+        publicadora = registro[4]
+
+
 
         games[1].seek(offset+2)
         games[1].write(b'*')
@@ -356,8 +372,8 @@ def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as f:
-            games = open("games.dat", 'ab')
-            finalGames = games.tell()
+            gamesW = open("games.dat", 'ab')
+            gamesR = open("games.dat", 'rb')
 
             listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]] = [[], [], [], []]
 
@@ -397,7 +413,7 @@ def executar_operacoes(nome_arquivo):
                     busca_indice_publicadora(str(argumento), listas)
 
                 elif operacao == 'i':
-                    insercao(listas, str(argumento), finalGames)
+                    insercao(listas, str(argumento), gamesW)
 
                 elif operacao == "r":
                     remocao(listas, int(argumento))
