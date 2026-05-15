@@ -259,7 +259,6 @@ def busca_indice_primario(argumento: int, listas:list):
 
     print("=============================")
 
-    
 def busca_indice_genero(argumento: str, listas:list):
     '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
     de jogos que possuem um determinado gênero, com base no índice secundário
@@ -312,7 +311,6 @@ def busca_indice_genero(argumento: str, listas:list):
 
     print("=============================")
 
-
 def busca_indice_publicadora(argumento: str, listas:list):
     print("Iniciando a busca pelo indice secundário: publicadora...")
 
@@ -346,7 +344,6 @@ def busca_indice_publicadora(argumento: str, listas:list):
         atual = no.proxPublicadora
     
     print("=============================")
-
 
 def insercao(argumento: str):
     print("Iniciando a inserção...")
@@ -430,7 +427,7 @@ def compactar_arquivo():
         tamanho = int.from_bytes(buffer, 'little')
 
 
-#AQUI TEM QUE ARRUMAR A ENTRADA PRA ACHAR AS OPERAÇÕES:
+
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
 def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
