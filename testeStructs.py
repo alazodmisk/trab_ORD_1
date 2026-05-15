@@ -1,10 +1,11 @@
+import io
 import sys
 import struct
 
 
 fmtPrimario = '<HI'
 fmtSecundario = '30sB'
-fmtInvertido = '3h'
+fmtInvertido = '<3h'
 
 
 class RegistroJogo:
@@ -34,11 +35,10 @@ class Indices:
         self.proxPublicadora = proxPublicadora
 
 
-#FUNÇÕES AUXILIARES
-'''Funções busca_binaria_chPrincipal(argumento, lista) e busca_binaria_chSecundaria(argumento,
-lista) utilizadas para encontrar a posição de um *argumento* em *lista*.
-Retorna -1 caso não esteja presente'''
 def busca_binaria_chPrincipal(argumento: int, lista: list[ChavePrincipal]) -> int:
+    '''Funções busca_binaria_chPrincipal(argumento, lista) e busca_binaria_chSecundaria(argumento,
+    lista) utilizadas para encontrar a posição de um *argumento* em *lista*.
+    Retorna -1 caso não esteja presente'''
     inicio = 0
     final = len(lista) - 1
 
@@ -67,10 +67,11 @@ def busca_binaria_chSecundaria(argumento: str, lista: list[ChaveSecundaria]) -> 
     return -1
 
 
-'''Funções organiza_lista_chPrincipal(lista) e organiza_lista_chSecundaria(lista) utilizadas para
-organizar listas quando há inserção de uma nova chave em *lista*.
-Método de Insertion Sort, analisando a posição ideal de um novo ID inserido no começo.'''
+
 def organiza_lista_chPrincipal(lista: list[ChavePrincipal]) -> None:
+    '''Funções organiza_lista_chPrincipal(lista) e organiza_lista_chSecundaria(lista) utilizadas para
+    organizar listas quando há inserção de uma nova chave em *lista*.
+    Método de Insertion Sort, analisando a posição ideal de um novo ID inserido no começo.'''
     for i in range(len(lista)-1):
         if lista[i].indice > lista[i+1].indice:
             aux = lista[i+1]
@@ -88,17 +89,17 @@ def organiza_lista_chSecundaria(lista: list[ChaveSecundaria]) -> None:
         else:
             break
 
-'''Existem dois casos de Organizacao:
-- Por Genero =       organiza_prox(*idNovo*, 1, *posicaoLista*, invertidaLista, generoLista)
-- Por Publicadora =  organiza_prox(*idNovo*, 2, *posicaoLista*, invertidaLista, publicadoraLista)
-
-dessa forma temos *qualChave* para diferenciar entre organizacao por Genero (1) e por Publicadora
-(2), para podermos atualizar os .prox de *invertida* e, caso o primeiro caso de uma chaveSecundaria
-seja alterado, atualizar a *lista*.
-Atualizações de acordo com o *idNovo* comecando por *posicaoLista* (primeiro caso de chaveSecundaria
-encontrado.)'''
 def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: list[Indices], lista: list[ChaveSecundaria]) -> int:
-    
+    '''Existem dois casos de Organizacao:
+    - Por Genero =       organiza_prox(*idNovo*, 1, *posicaoLista*, invertidaLista, generoLista)
+    - Por Publicadora =  organiza_prox(*idNovo*, 2, *posicaoLista*, invertidaLista, publicadoraLista)
+
+    dessa forma temos *qualChave* para diferenciar entre organizacao por Genero (1) e por Publicadora
+    (2), para podermos atualizar os .prox de *invertida* e, caso o primeiro caso de uma chaveSecundaria
+    seja alterado, atualizar a *lista*.
+    Atualizações de acordo com o *idNovo* comecando por *posicaoLista* (primeiro caso de chaveSecundaria
+    encontrado.)'''
+
     final = len(invertida)
     posicao = lista[posicaoLista].indice
 
@@ -189,53 +190,40 @@ def construir_indices():
             linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
             listaTotal.write(linha)  
 
-    
-##FUNÇÕES PARA CARREGAR OS .IND E PARA CARREGAR A LISTA INVERTIDA
-def carrega_indice_primario(primarioLista:list[ChavePrincipal]):
-    tamanho = struct.calcsize(fmtPrimario)
-    with open("primario.ind", 'rb') as primario:
-        linha = primario.read(tamanho)
-        while len(linha) == tamanho:
-            buffer = struct.unpack(fmtPrimario, linha)
-            primarioLista.append(ChavePrincipal(buffer[0], buffer[1]))
-            linha = primario.read(tamanho)
-    return primarioLista
-        
-def carrega_indice_genero(generoLista:list):
-    tamanho = struct.calcsize(fmtSecundario)
-    with open("genero.ind", 'rb') as genero:
-        linha = genero.read(tamanho)
-        while len(linha) == tamanho:
-            buffer = struct.unpack(fmtSecundario, linha)
-            nome = buffer[0].decode().strip('\x00')
-            generoLista.append(ChaveSecundaria(nome, buffer[1]))
-            linha = genero.read(tamanho)
-    return generoLista
 
-def carrega_indice_publicadora(publicadoraLista:list):
-    tamanho = struct.calcsize(fmtSecundario)
-    with open("publicadora.ind", 'rb') as publicadora:
-        linha = publicadora.read(tamanho)
-        while len(linha) == tamanho:
-            buffer = struct.unpack(fmtSecundario, linha)
-            nome = buffer[0].decode().strip('\x00')
-            publicadoraLista.append(ChaveSecundaria(nome, buffer[1]))
-            linha = publicadora.read(tamanho)
-    return publicadoraLista
+
+def carrega_indices(arq: io.BufferedReader, codigo: int):
+    lista: list[ChavePrincipal| ChaveSecundaria |Indices] = []
+
+    if codigo == 1:
+        fmt = fmtPrimario
+        tam = struct.calcsize(fmtPrimario)
+    elif codigo == 2:
+        fmt = fmtSecundario
+        tam = struct.calcsize(fmtSecundario)
+    else:
+        fmt = fmtInvertido
+        tam = struct.calcsize(fmtInvertido)
         
-def carregar_listaInvertida(listaInvertida):
-    tamanho = struct.calcsize(fmtInvertido)
-    with open("listaInvertida.lst", 'rb') as arquivo:
-        linha = arquivo.read(tamanho)
-        while len(linha) == tamanho:
-            buffer = struct.unpack(fmtInvertido, linha)
-            listaInvertida.append(Indices(buffer[0], buffer[1], buffer[2]))
-            linha = arquivo.read(tamanho)
-    return listaInvertida
+    linha = arq.read(tam)
+    while len(linha) == tam:
+        buffer = struct.unpack(fmt, linha)
+
+        if codigo == 1:
+            lista.append(ChavePrincipal(buffer[0], buffer[1]))
+        elif codigo == 2:
+            nome = buffer[0].decode().strip('\x00')
+            lista.append(ChaveSecundaria(nome, buffer[1]))
+        else:
+            lista.append(Indices(buffer[0], buffer[1], buffer[2]))
+
+        linha = arq.read(tam)
+
+    return lista
 
 
 ##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
-def busca_indice_primario(argumento: int, primarioLista:list):
+def busca_indice_primario(argumento: int, listas:list):
     '''Função carregar_indice_primario() utilizada para ler o arquivo "primario.ind"
     e transformar cada linha em um objeto do tipo ChavePrincipal, armazenando-os
     em uma lista.
@@ -254,7 +242,7 @@ def busca_indice_primario(argumento: int, primarioLista:list):
     - lista contendo objetos ChavePrincipal com indice e offset correspondentes'''
 
     print("Iniciando a busca...")
-
+    primarioLista:list[ChavePrincipal] = listas[0]
 
     pos = busca_binaria_chPrincipal(argumento, primarioLista)
 
@@ -272,7 +260,7 @@ def busca_indice_primario(argumento: int, primarioLista:list):
     print("=============================")
 
     
-def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, primarioLista:list):
+def busca_indice_genero(argumento: str, listas:list):
     '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
     de jogos que possuem um determinado gênero, com base no índice secundário
     "genero.ind" e na lista invertida "listaInvertida.lst".
@@ -295,6 +283,10 @@ def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, p
 
     Não retorna valores, apenas imprime os registros encontrados.'''
     print("Iniciando a busca pelo indice secundário: Gênero...")
+
+    primarioLista: list[ChavePrincipal] = listas[0]
+    generoLista: list[ChaveSecundaria] = listas[1]
+    listaInvertida: list[Indices] = listas[3]
 
     pos = busca_binaria_chSecundaria(argumento, generoLista)
 
@@ -321,8 +313,12 @@ def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, p
     print("=============================")
 
 
-def busca_indice_publicadora(argumento: str, publicadoraLista:list, listaInvertida:list, primarioLista:list):
+def busca_indice_publicadora(argumento: str, listas:list):
     print("Iniciando a busca pelo indice secundário: publicadora...")
+
+    primarioLista: list[ChavePrincipal] = listas[0]
+    publicadoraLista: list[ChaveSecundaria] = listas[2]
+    listaInvertida: list[Indices] = listas[3]
     
     pos = busca_binaria_chSecundaria(argumento, publicadoraLista)
 
@@ -440,6 +436,26 @@ def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as f:
+            games = open("games.dat", 'rb')
+
+            listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]] = [[], [], [], []]
+
+            arq = open("primario.ind", 'rb')
+            listas[0] = carrega_indices(arq, 1)
+            arq.close()
+
+            arq = open("genero.ind", 'rb')
+            listas[1] = carrega_indices(arq, 2)
+            arq.close()
+
+            arq = open("publicadora.ind", 'rb')
+            listas[2] = carrega_indices(arq, 2)
+            arq.close()
+
+            arq = open("listaInvertida.lst", 'rb')
+            listas[3] = carrega_indices(arq, 3)
+            arq.close()
+            
             for linha in f:
                 linha = linha.strip()
 
@@ -451,27 +467,13 @@ def executar_operacoes(nome_arquivo):
                 argumento = partes[1]
 
                 if operacao == 'bp':
-                    primarioLista: list[ChavePrincipal] = []
-                    primarioLista = carrega_indice_primario(primarioLista)
-                    busca_indice_primario(int(argumento), primarioLista)
+                    busca_indice_primario(int(argumento), listas)
 
                 elif operacao == 'bs1':
-                    primarioLista: list[ChavePrincipal] = []
-                    listaInvertida: list[Indices] = []
-                    generoLista: list[ChaveSecundaria] = []
-                    generoLista = carrega_indice_genero(generoLista)
-                    listaInvertida = carregar_listaInvertida(listaInvertida)
-                    primarioLista = carrega_indice_primario(primarioLista)
-                    busca_indice_genero(str(argumento), generoLista, listaInvertida, primarioLista)
+                    busca_indice_genero(str(argumento), listas)
 
                 elif operacao == 'bs2':
-                    primarioLista: list[ChavePrincipal] = []
-                    listaInvertida: list[Indices] = []
-                    publicadoraLista: list[ChaveSecundaria] = []
-                    publicadoraLista = carrega_indice_publicadora(publicadoraLista)
-                    listaInvertida = carregar_listaInvertida(listaInvertida)
-                    primarioLista = carrega_indice_primario(primarioLista)
-                    busca_indice_publicadora(str(argumento), publicadoraLista, listaInvertida, primarioLista)
+                    busca_indice_publicadora(str(argumento), listas)
 
                 elif operacao == 'i':
                     insercao(argumento)
