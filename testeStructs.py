@@ -481,6 +481,25 @@ def executar_operacoes(nome_arquivo):
                 else:
                     print("Comando não identificado. Por favor, verifique o arquivo de operações.")    
 
+            with open("primario.ind", "wb") as primario:
+                for i in listas[0]:
+                    linha = struct.pack(fmtPrimario, i.indice, i.offset)
+                    primario.write(linha) 
+
+            with open("publicadora.ind", "wb") as publicadora:
+                for i in listas[1]:
+                    linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
+                    publicadora.write(linha) 
+                    
+            with open("genero.ind", "wb") as genero:
+                for i in listas[2]:
+                    linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
+                    genero.write(linha) 
+
+            with open("listaInvertida.lst", "wb") as listaTotal:
+                for i in listas[3]:
+                    linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
+                    listaTotal.write(linha)  
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
 
