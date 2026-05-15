@@ -5,7 +5,7 @@ import struct
 
 
 fmtPrimario = '<HI'
-fmtSecundario = '30sB'
+fmtSecundario = '30sH'
 fmtInvertido = '<3h'
 
 
@@ -374,7 +374,7 @@ def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
 
         posGen = busca_binaria_chSecundaria(registro[3], listas[1])
         if posGen == -1:
-            listas[1] = [ChaveSecundaria(registro[3], indice)] + listas[1]
+            listas[1] = [ChaveSecundaria(registro[3], len(listas[3]))] + listas[1]
             organiza_lista_chSecundaria(listas[1])
         else:
             posGen = organiza_proxs(indice, 1, posGen, listas[3], listas[1])
@@ -382,7 +382,7 @@ def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
 
         posPubl = busca_binaria_chSecundaria(registro[4], listas[2])
         if posPubl == -1:
-            listas[2] = [ChaveSecundaria(registro[4], indice)] + listas[2]
+            listas[2] = [ChaveSecundaria(registro[4], len(listas[3]))] + listas[2]
             organiza_lista_chSecundaria(listas[2])
         else:
             posPubl = organiza_proxs(indice, 2, posPubl, listas[3], listas[2])

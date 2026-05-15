@@ -1,3 +1,4 @@
-bp 539
-i 539|Minecraft|2011|Sandbox|Microsoft Studios|PC|
-bp 539
+i 676|OTTO|2026|Plataforma|IEEE|PC|
+bp 676
+bs1 Plataforma
+bs2 IEEE
