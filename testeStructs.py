@@ -225,7 +225,7 @@ def carregar_listaInvertida(listaInvertida):
 
 
 ##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
-def busca_indice_primario(argumento: int):
+def busca_indice_primario(argumento: int, primarioLista:list):
     '''Função carregar_indice_primario() utilizada para ler o arquivo "primario.ind"
     e transformar cada linha em um objeto do tipo ChavePrincipal, armazenando-os
     em uma lista.
@@ -244,8 +244,7 @@ def busca_indice_primario(argumento: int):
     - lista contendo objetos ChavePrincipal com indice e offset correspondentes'''
 
     print("Iniciando a busca...")
-    primarioLista: list[ChavePrincipal] = []
-    primarioLista = carrega_indice_primario(primarioLista)
+
 
     pos = busca_binaria_chPrincipal(argumento, primarioLista)
 
@@ -285,14 +284,8 @@ def busca_indice_primario(argumento: int):
         - argumento: nome do gênero a ser buscado (string)
 
     Não retorna valores, apenas imprime os registros encontrados.'''
-def busca_indice_genero(argumento: str):
+def busca_indice_genero(argumento: str, generoLista:list, listaInvertida:list, primarioLista:list):
     print("Iniciando a busca pelo indice secundário: Gênero...")
-
-    primarioLista: list[ChavePrincipal] = []
-    listaInvertida: list[Indices] = []
-    generoLista: list[ChaveSecundaria] = []
-
-    generoLista = carrega_indice_genero(generoLista)
 
     pos = busca_binaria_chSecundaria(argumento, generoLista)
 
@@ -300,8 +293,6 @@ def busca_indice_genero(argumento: str):
         print("Gênero não encontrado!")
         return
 
-    listaInvertida = carregar_listaInvertida(listaInvertida)
-    primarioLista = carrega_indice_primario(primarioLista)
     atual = generoLista[pos].indice
 
     while atual != -1:
@@ -321,22 +312,14 @@ def busca_indice_genero(argumento: str):
     print("=============================")
 
 
-def busca_indice_publicadora(argumento: str):
+def busca_indice_publicadora(argumento: str, publicadoraLista:list, listaInvertida:list, primarioLista:list):
     print("Iniciando a busca pelo indice secundário: publicadora...")
-    primarioLista: list[ChavePrincipal] = []
-    listaInvertida: list[Indices] = []
-    publicadoraLista: list[ChaveSecundaria] = []
-
-    publicadoraLista = carrega_indice_publicadora(publicadoraLista)
     
     pos = busca_binaria_chSecundaria(argumento, publicadoraLista)
 
     if pos == -1:
         print("Publicadora não encontrado!")
         return
-
-    listaInvertida = carregar_listaInvertida(listaInvertida)
-    primarioLista = carrega_indice_primario(primarioLista)
     
     atual = publicadoraLista[pos].indice
 
@@ -453,17 +436,36 @@ def executar_operacoes(nome_arquivo):
                 argumento = partes[1]
 
                 if operacao == 'bp':
-                    busca_indice_primario(int(argumento))
+                    primarioLista: list[ChavePrincipal] = []
+                    primarioLista = carrega_indice_primario(primarioLista)
+                    busca_indice_primario(int(argumento), primarioLista)
+
                 elif operacao == 'bs1':
-                    busca_indice_genero(str(argumento))
+                    primarioLista: list[ChavePrincipal] = []
+                    listaInvertida: list[Indices] = []
+                    generoLista: list[ChaveSecundaria] = []
+                    generoLista = carrega_indice_genero(generoLista)
+                    listaInvertida = carregar_listaInvertida(listaInvertida)
+                    primarioLista = carrega_indice_primario(primarioLista)
+                    busca_indice_genero(str(argumento), generoLista, listaInvertida, primarioLista)
+
                 elif operacao == 'bs2':
-                    busca_indice_publicadora(argumento)
+                    primarioLista: list[ChavePrincipal] = []
+                    listaInvertida: list[Indices] = []
+                    publicadoraLista: list[ChaveSecundaria] = []
+                    publicadoraLista = carrega_indice_publicadora(publicadoraLista)
+                    listaInvertida = carregar_listaInvertida(listaInvertida)
+                    primarioLista = carrega_indice_primario(primarioLista)
+                    busca_indice_publicadora(str(argumento), publicadoraLista, listaInvertida, primarioLista)
+
                 elif operacao == 'i':
                     insercao(argumento)
+
                 elif operacao == "r":
                     remocao(argumento)
+
                 else:
-                    print("Comando não identificado. Por favor, verifique se o arquivo de operações.")    
+                    print("Comando não identificado. Por favor, verifique o arquivo de operações.")    
 
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
