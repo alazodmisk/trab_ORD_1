@@ -433,7 +433,7 @@ def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as f:
-            games = open("games.dat", 'rb')
+            games = open("games.dat", 'ab')
 
             listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]] = [[], [], [], []]
 
