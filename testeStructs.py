@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 import struct
 
@@ -345,7 +346,7 @@ def busca_indice_publicadora(argumento: str, listas:list):
     
     print("=============================")
 
-def insercao(argumento: str):
+def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
     print("Iniciando a inserção...")
     ''' 
 
@@ -357,45 +358,45 @@ def insercao(argumento: str):
     
     escreve no offset de games.dat, ou seja no final
     com .sizeof do inserido'''
-    # tamanho = len(argumento).to_bytes()
-    # registro = argumento.split('|')
-    # offset = 0 #N SEI COMO MECHER COM ISSO
+    registro = argumento.split('|')
+    indice = int(registro[0])
 
-    # with open("game.dat", 'r') as game:
-    # with open("primario.ind", 'r') as p:
-    #     buffer = p.read().decode()
-    #     dados = buffer.split('\n')
-    #     dados.pop()
-    #     for i in dados:
-    #         i = i.split(' ', 1)
+    games.seek(0, os.SEEK_END)
+    finalGames = games.tell()
+    
+    print(f'Inserção do registro de chave "{indice}"')
+
+    pos = busca_binaria_chPrincipal(indice, listas[0])
+
+    if pos == -1:
+        listas[0] = [ChavePrincipal(indice, finalGames)] + listas[0]
+        organiza_lista_chPrincipal(listas[0])
+
+        posGen = busca_binaria_chSecundaria(registro[3], listas[1])
+        if posGen == -1:
+            listas[1] = [ChaveSecundaria(registro[3], indice)] + listas[1]
+            organiza_lista_chSecundaria(listas[1])
+        else:
+            posGen = organiza_proxs(indice, 1, posGen, listas[3], listas[1])
         
-    #     inicio = 0
-    #     final = len(dados) - 1
-    #     posicao = -1
 
-    #     if registro[0] != dados[inicio] and registro[0] != dados[final]:
-    #         if registro[0] < dados[inicio]:
-    #             dados = Identificador(registro[0], offset) + dados
-    #         elif registro[0] > dados[final]:
-    #             dados = dados + Identificador(registro[0], offset)
-    #         else: 
-    #             while inicio < final and posicao == -1:
-    #                 media = (inicio + final)//2
-    #                 if dados[media] == registro[0]:
-    #                     break
-    #                 if registro[0] > dados[media]:
-    #                     inicio = media + 1
-    #                     if registro[0] < dados[media+1]:
-    #                         posicao = media
-                        
-    #                 if registro[0] < dados[media]:
-    #                     final = media - 1
-    #                     if registro[0] > dados[media-1]:
-    #                         posicao = media - 1
-    #             if posicao == -1:
-    #                 print()
-    #             else:
-    #                 dados = dados[:posicao] + Identificador(registro[0], EITAPORRA) + dados[posicao:]   
+        posPubl = busca_binaria_chSecundaria(registro[4], listas[2])
+        if posPubl == -1:
+            listas[2] = [ChaveSecundaria(registro[4], indice)] + listas[2]
+            organiza_lista_chSecundaria(listas[2])
+        else:
+            posPubl = organiza_proxs(indice, 2, posPubl, listas[3], listas[2])
+
+        listas[3].append(Indices(indice, posGen, posPubl))
+
+        games.write(len(argumento).to_bytes(2, 'little'))
+        games.write(argumento.encode())
+
+    else:
+        print("Registro descartado (IDs duplicados não são aceitos).")
+
+    return listas
+
 
 def remocao():
     print("Iniciando a remoção...")
@@ -406,7 +407,7 @@ def compactar_arquivo():
     Cria uma lista pra ir colocando os válidos
     cria com o nome games_compactado.dat
     open games.dat as gamesDat
-    buffer = games.read[2]
+    buffer = gamesDat.read[2]
     tamanho = int.frombytes(buffer, 'little') ##Isso do primeiro registro
         Enquanto tamanho != b''  
                 regi:str = buffer.decode()
@@ -417,6 +418,7 @@ def compactar_arquivo():
                 tranforma os objetos da lista em objetos do tipo registroJogo (todos os campos + tamanho)
                 adiciona nos válidos
                 escreve o tamanho + o registro no games_compactado.dat (usando structure.pack)
+                offset = tamanho + 2
                 tamanho = gamesDat.read(2)
     chama a constrói indices
     '''
@@ -425,6 +427,8 @@ def compactar_arquivo():
     with open('games.dat', 'rb') as gamesDat:
         buffer = gamesDat.read(2)
         tamanho = int.from_bytes(buffer, 'little')
+        while tamanho != b'':
+            print("a")
 
 
 
@@ -433,7 +437,7 @@ def executar_operacoes(nome_arquivo):
     print(f"Executando operações do arquivo: {nome_arquivo}")
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as f:
-            games = open("games.dat", 'ab')
+            gamesR = open("games.dat", 'rb')
 
             listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]] = [[], [], [], []]
 
@@ -473,13 +477,15 @@ def executar_operacoes(nome_arquivo):
                     busca_indice_publicadora(str(argumento), listas)
 
                 elif operacao == 'i':
-                    insercao(argumento)
+                    gamesW = open("games.dat", 'ab')
+                    listas = insercao(listas, str(argumento), gamesW)
+                    gamesW.close() 
 
                 elif operacao == "r":
                     remocao(argumento)
 
                 else:
-                    print("Comando não identificado. Por favor, verifique o arquivo de operações.")    
+                    print("Comando não identificado. Por favor, verifique o arquivo de operações.")   
 
             with open("primario.ind", "wb") as primario:
                 for i in listas[0]:
@@ -487,12 +493,12 @@ def executar_operacoes(nome_arquivo):
                     primario.write(linha) 
 
             with open("publicadora.ind", "wb") as publicadora:
-                for i in listas[1]:
+                for i in listas[2]:
                     linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
                     publicadora.write(linha) 
                     
             with open("genero.ind", "wb") as genero:
-                for i in listas[2]:
+                for i in listas[1]:
                     linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
                     genero.write(linha) 
 
@@ -500,8 +506,10 @@ def executar_operacoes(nome_arquivo):
                 for i in listas[3]:
                     linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
                     listaTotal.write(linha)  
+
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
+
 
 def main():
     if len(sys.argv) < 2:
