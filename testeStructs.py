@@ -417,6 +417,24 @@ def remocao():
 
 def compactar_arquivo():
     print("Iniciando a compactação do arquivo...")
+    '''
+    Cria uma lista pra ir colocando os válidos
+    cria com o nome games_compactado.dat
+    open games.dat as gamesDat
+        Enquanto tamanho != b''
+            buffer = games.read[2]
+                tamanho = int.frombytes(buffer, 'little') ##Isso do primeiro registro
+                regi:str = buffer.decode()
+                registro:list[str] = regi.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
+                for i in buffer[0] ##buffer[0] = ID
+                if i == *
+                    não adiciona na lista dos válidos
+                tranforma os objetos da lista em objetos do tipo registroJogo (todos os campos + tamanho)
+                adiciona nos válidos
+                escreve o tamanho + o registro no games_compactado.dat (usando structure.pack)
+                tamanho = gamesDat.read
+    chama a constrói indices
+    '''
 
 #AQUI TEM QUE ARRUMAR A ENTRADA PRA ACHAR AS OPERAÇÕES:
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
