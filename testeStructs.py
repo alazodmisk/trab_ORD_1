@@ -415,7 +415,8 @@ def insercao(argumento: str):
 def remocao():
     print("Iniciando a remoção...")
 
-
+def compactar_arquivo():
+    print("Iniciando a compactação do arquivo...")
 
 #AQUI TEM QUE ARRUMAR A ENTRADA PRA ACHAR AS OPERAÇÕES:
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
@@ -448,9 +449,6 @@ def executar_operacoes(nome_arquivo):
 
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
-
-def compactar_arquivo():
-    print("Iniciando a compactação do arquivo...")
 
 def main():
     if len(sys.argv) < 2:
