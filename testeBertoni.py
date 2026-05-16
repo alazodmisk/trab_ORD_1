@@ -329,6 +329,7 @@ def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
 
 
 def remocao(games: list[io.BufferedReader|io.BufferedWriter], listas: list[list], argumento: int):
+    print("Iniciando a remoção...")
     print(f'Remoção do registro de chave "{argumento}"')
     pos = busca_binaria_chPrincipal(argumento, listas[0])
 
@@ -336,22 +337,28 @@ def remocao(games: list[io.BufferedReader|io.BufferedWriter], listas: list[list]
         offset = listas[0][pos].offset
         listas[0] = listas[0][:pos] + listas[0][pos+1:]
 
-        games[0].seek(offset)
-        tamanho = int.from_bytes(games[0].read(2))
-        registro = games[0].read(tamanho).split()
+        gamesR.seek(offset)
+        tamanho = int.from_bytes(gamesR.read(2))
+        registro = gamesR.read(tamanho).decode().split()
 
         genero = registro[3]
         publicadora = registro[4]
+        
+        posGen = busca_binaria_chSecundaria(genero, listas[1])
+        posInv = listas[1][posGen].indice
+        if listas[3][posInv].proxGenero == -1:
+            listas[1] = listas[1][:posGen] + listas[1][posGen + 1:]
+
+        while listas[3][posInv].proxGenero != -1 and listas[3][listas[3][posInv].proxGenero].indice < idNovo:
+            posInv = listas[3][posInv].proxGenero
+        
+        aux = listas[3][posInv].proxGenero
+        listas[3][posInv].proxGenero = final
+        posInv = aux
 
 
-
-        games[1].seek(offset+2)
-        games[1].write(b'*')
-
-
-
-
-
+        gamesW.seek(offset+2)
+        gamesW.write(b'*')
 
 
 
