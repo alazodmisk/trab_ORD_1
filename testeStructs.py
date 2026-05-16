@@ -397,39 +397,48 @@ def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
 
     return listas
 
-
 def remocao():
     print("Iniciando a remoção...")
 
 def compactar_arquivo():
     print("Iniciando a compactação do arquivo...")
-    '''
-    Cria uma lista pra ir colocando os válidos
-    cria com o nome games_compactado.dat
-    open games.dat as gamesDat
-    buffer = gamesDat.read[2]
-    tamanho = int.frombytes(buffer, 'little') ##Isso do primeiro registro
-        Enquanto tamanho != b''  
-                regi:str = buffer.decode()
-                registro:list[str] = regi.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
-                for i in buffer[0] ##buffer[0] = ID
-                if i == *
-                    não adiciona na lista dos válidos
-                tranforma os objetos da lista em objetos do tipo registroJogo (todos os campos + tamanho)
-                adiciona nos válidos
-                escreve o tamanho + o registro no games_compactado.dat (usando structure.pack)
-                offset = tamanho + 2
-                tamanho = gamesDat.read(2)
-    chama a constrói indices
-    '''
-    validos:list[RegistroJogo]
-    nomeArquivo = str(input("Digite o nome do arquivo para compactação: "))
+    
+    primarioLista: list[ChavePrincipal] = []
+    validos:list = []
+    offset = 0
+
     with open('games.dat', 'rb') as gamesDat:
         buffer = gamesDat.read(2)
-        tamanho = int.from_bytes(buffer, 'little')
-        while tamanho != b'':
-            print("a")
+        while buffer != b'':
+            tamanho = int.from_bytes(buffer, 'little')            
+            registro = gamesDat.read(tamanho)
+            registroStr = registro.decode()
+            if "*" not in registroStr.split("|")[0]:
+                validos.append(registro)
+            buffer = gamesDat.read(2)
 
+    with open('games.dat', 'wb') as gamesCompactados:
+        for registro in validos:
+            tam = len(registro).to_bytes(2, 'little')
+            gamesCompactados.write(tam)
+            gamesCompactados.write(registro)
+
+    with open('games.dat', 'rb') as gamesDat2:
+        buffer = gamesDat2.read(2)
+        while buffer != b'':
+            tam = int.from_bytes(buffer, "little")
+            regi = gamesDat2.read(tam).decode()
+            registro:list[str] = regi.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
+            indice = int(registro[0])
+            primarioLista = [ChavePrincipal(indice, offset)] + primarioLista
+            organiza_lista_chPrincipal(primarioLista)
+            offset += tam + 2
+            buffer = gamesDat2.read(2)
+
+    with open("primario.ind", "wb") as primario:
+        for i in primarioLista:
+            linha = struct.pack(fmtPrimario, i.indice, i.offset)
+            primario.write(linha) 
 
 
 ##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
