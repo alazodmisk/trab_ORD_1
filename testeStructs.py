@@ -8,17 +8,6 @@ fmtPrimario = '<HI'
 fmtSecundario = '30sH'
 fmtInvertido = '<3h'
 
-
-class RegistroJogo:
-    def __init__(self, Tamanho:int, ID:int, Nome:str, Ano:int, Genero:str, Publicadora:str, Plataforma:str):
-        self.Tamanho = Tamanho
-        self.ID = ID
-        self.Nome = Nome
-        self.Ano = Ano
-        self.Genero = Genero
-        self.Publicadora = Publicadora
-        self.Plataforma = Plataforma
-
 class ChavePrincipal:
     def __init__(self, indice: int, offset: int):
         self.indice = indice
@@ -404,6 +393,7 @@ def compactar_arquivo():
     print("Iniciando a compactação do arquivo...")
     
     primarioLista: list[ChavePrincipal] = []
+    registro:list[str] = []
     validos:list = []
     offset = 0
 
@@ -411,11 +401,16 @@ def compactar_arquivo():
         buffer = gamesDat.read(2)
         while buffer != b'':
             tamanho = int.from_bytes(buffer, 'little')            
-            registro = gamesDat.read(tamanho)
-            registroStr = registro.decode()
-            if "*" not in registroStr.split("|")[0]:
-                validos.append(registro)
+            regi1 = gamesDat.read(tamanho)
+            regi2 = regi1.decode()
+            registro = regi2.split("|")
+            print(registro)
+            id_str = registro[0]
+            print(id_str)
+            if not id_str.startswith("*"):
+                validos.append(regi1)
             buffer = gamesDat.read(2)
+            registro = []
 
     with open('games.dat', 'wb') as gamesCompactados:
         for registro in validos:
