@@ -1,4 +1,6 @@
-i 676|OTTO|2026|Plataforma|IEEE|PC|
-bp 676
-bs1 Plataforma
-bs2 IEEE
+bp 459
+bs1 Hack and Slash
+i 539|Minecraft|2011|Sandbox|Microsoft Studios|PC|
+r 121
+r 754
+bs2 CD Projekt RED

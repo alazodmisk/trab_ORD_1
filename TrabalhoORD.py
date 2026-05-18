@@ -96,7 +96,7 @@ def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: li
     if invertida[posicao].indice > idNovo:
         lista[posicaoLista].indice = final
 
-    elif qualChave == 1:    #ANALISE DE GENERO  
+    elif qualChave == 1:    #ANALISE DE GENERO
         while invertida[posicao].proxGenero != -1 and invertida[invertida[posicao].proxGenero].indice < idNovo:
             posicao = invertida[posicao].proxGenero
         
@@ -115,7 +115,6 @@ def organiza_proxs(idNovo: int, qualChave: int, posicaoLista: int, invertida: li
     return posicao
 
 
-
 def construir_indices():
     primarioLista: list[ChavePrincipal] = []
     generoLista: list[ChaveSecundaria] = []
@@ -132,6 +131,11 @@ def construir_indices():
 
             registro:list[str] = buffer.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
 
+            if registro[0][0] == '*':
+                buffer = games.read(2)
+                offset += tam + 2
+                continue
+
             indice = int(registro[0])
 
             primarioLista = [ChavePrincipal(indice, offset)] + primarioLista
@@ -140,17 +144,17 @@ def construir_indices():
 
             finalLista = len(listaInvertida)
 
-            #posicaoGen refere-se ao próximo caso de Genero do novo registro.
+            
             posicaoGen = busca_binaria_chSecundaria(registro[3], generoLista)
-            if posicaoGen == -1:    #Nunca antes registrado
+            if posicaoGen == -1:
                 generoLista = [ChaveSecundaria(registro[3], finalLista)] + generoLista
                 organiza_lista_chSecundaria(generoLista)
             else:
                 posicaoGen = organiza_proxs(indice, 1, posicaoGen, listaInvertida, generoLista)
             
-            #posicaoPubl refere-se ao próximo caso de Publicadora do novo registro.
+            
             posicaoPubl = busca_binaria_chSecundaria(registro[4], publicadoraLista)
-            if posicaoPubl == -1:   #Nunca antes registrada
+            if posicaoPubl == -1:
                 publicadoraLista = [ChaveSecundaria(registro[4], finalLista)] + publicadoraLista
                 organiza_lista_chSecundaria(publicadoraLista)
             else:
@@ -179,7 +183,6 @@ def construir_indices():
         for i in listaInvertida:
             linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
             listaTotal.write(linha)  
-
 
 
 def carrega_indices(arq: io.BufferedReader, codigo: int):
@@ -211,9 +214,7 @@ def carrega_indices(arq: io.BufferedReader, codigo: int):
 
     return lista
 
-
-##FUNÇÕES AUXILIARES DA EXECUÇÃO DAS OPERAÇÕES
-def busca_indice_primario(argumento: int, listas:list):
+def busca_indice_primario(listas: list[ChavePrincipal], argumento: int, games: io.BufferedRandom):
     '''Função carregar_indice_primario() utilizada para ler o arquivo "primario.ind"
     e transformar cada linha em um objeto do tipo ChavePrincipal, armazenando-os
     em uma lista.
@@ -230,134 +231,65 @@ def busca_indice_primario(argumento: int, listas:list):
 
     Retorna:
     - lista contendo objetos ChavePrincipal com indice e offset correspondentes'''
+    primarioLista: list[ChavePrincipal] = listas[0]
 
-    print("Iniciando a busca...")
-    primarioLista:list[ChavePrincipal] = listas[0]
+    print(f'Buscando registro de ID "{argumento}"')
 
     pos = busca_binaria_chPrincipal(argumento, primarioLista)
-
     if pos != -1:
         offset = primarioLista[pos].offset
 
-        with open("games.dat", "rb") as games:
-            games.seek(offset)
-            tam = int.from_bytes(games.read(2), "little")
-            registro = games.read(tam).decode()
-            print(registro)
+        games.seek(offset)
+        tam = int.from_bytes(games.read(2), "little")
+        registro = games.read(tam).decode()
+        print("- " + registro)
     else:
-        print("Registro não encontrado! <erro de argumento (índice) inválido>")
+        print("- Registro não encontrado! <índice inválido>")
 
-    print("=============================")
-
-def busca_indice_genero(argumento: str, listas:list):
-    '''Função busca_indice_genero(argumento) utilizada para buscar todos os registros
-    de jogos que possuem um determinado gênero, com base no índice secundário
-    "genero.ind" e na lista invertida "listaInvertida.lst".
-
-    A função realiza os seguintes passos:
-        - Carrega o índice secundário de gêneros para uma lista de objetos
-        ChaveSecundaria.
-        - Realiza busca binária para encontrar o gênero desejado.
-        - Caso encontrado, obtém o índice inicial da lista invertida.
-        - Percorre a lista encadeada utilizando o campo proxGenero.
-        - Para cada índice primário encontrado:
-            - Realiza busca no índice primário para obter o offset.
-            - Acessa o arquivo "games.dat" com seek.
-            - Lê e imprime o registro correspondente.
-
-    Caso o gênero não seja encontrado, a função informa ao usuário.
-
-    Parâmetro:
-        - argumento: nome do gênero a ser buscado (string)
-
-    Não retorna valores, apenas imprime os registros encontrados.'''
-    print("Iniciando a busca pelo indice secundário: Gênero...")
-
+def busca_indice_secundario(listas:list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]], codigo: int, argumento: str, games: io.BufferedRandom):
     primarioLista: list[ChavePrincipal] = listas[0]
-    generoLista: list[ChaveSecundaria] = listas[1]
+    secundarioLista: list[ChaveSecundaria] = listas[codigo]
     listaInvertida: list[Indices] = listas[3]
 
-    pos = busca_binaria_chSecundaria(argumento, generoLista)
+    print(f'Buscando registros de "{argumento}"')
 
+    pos = busca_binaria_chSecundaria(argumento, secundarioLista)
     if pos == -1:
-        print("Gênero não encontrado!")
+        if codigo == 1:
+            print("- Gênero não encontrado!")
+        else:
+            print("- Publicadora não encontrada!")
         return
 
-    atual = generoLista[pos].indice
-
+    atual = secundarioLista[pos].indice
     while atual != -1:
         no = listaInvertida[atual]
-        id_jogo = no.indice
-        posPrim = busca_binaria_chPrincipal(id_jogo, primarioLista)
+        posPrim = busca_binaria_chPrincipal(no.indice, primarioLista)
 
-        if posPrim != -1:
-            offset = primarioLista[posPrim].offset
-            with open("games.dat", "rb") as games:
-                games.seek(offset)
-                tam = int.from_bytes(games.read(2), "little")
-                registro = games.read(tam).decode()
-                print(registro)
-        atual = no.proxGenero
+        offset = primarioLista[posPrim].offset
+        games.seek(offset)
+        tam = int.from_bytes(games.read(2), "little")
+        registro = games.read(tam).decode()
+        print("- " + registro)
 
-    print("=============================")
+        if codigo == 1:
+            atual = no.proxGenero
+        else:
+            atual = no.proxPublicadora
 
-def busca_indice_publicadora(argumento: str, listas:list):
-    print("Iniciando a busca pelo indice secundário: publicadora...")
 
-    primarioLista: list[ChavePrincipal] = listas[0]
-    publicadoraLista: list[ChaveSecundaria] = listas[2]
-    listaInvertida: list[Indices] = listas[3]
-    
-    pos = busca_binaria_chSecundaria(argumento, publicadoraLista)
-
-    if pos == -1:
-        print("Publicadora não encontrado!")
-        return
-    
-    atual = publicadoraLista[pos].indice
-
-    while atual != -1:
-        no = listaInvertida[atual]
-
-        id_jogo = no.indice
-
-        posPrim = busca_binaria_chPrincipal(id_jogo, primarioLista)
-
-        if posPrim != -1:
-            offset = primarioLista[posPrim].offset
-
-            with open("games.dat", "rb") as games:
-                games.seek(offset)
-                tam = int.from_bytes(games.read(2), "little")
-                registro = games.read(tam).decode()
-                print(registro)
-        atual = no.proxPublicadora
-    
-    print("=============================")
-
-def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
-    print("Iniciando a inserção...")
-    ''' 
-
-    Salva o offset como o tamanho de games.dat
-    Abre primario.ind, procura o Genero do meliante
-    caso ja exista -> faça manutençao dos id dos generos
-    caso nao -> add em genero.ind
-    msm coisa com publicadora
-    
-    escreve no offset de games.dat, ou seja no final
-    com .sizeof do inserido'''
+def insercao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]], argumento: str, games: io.BufferedRandom) -> list:
     registro = argumento.split('|')
     indice = int(registro[0])
 
-    games.seek(0, os.SEEK_END)
-    finalGames = games.tell()
-    
     print(f'Inserção do registro de chave "{indice}"')
 
     pos = busca_binaria_chPrincipal(indice, listas[0])
 
     if pos == -1:
+        games.seek(0, 2)
+        finalGames = games.tell()
+
         listas[0] = [ChavePrincipal(indice, finalGames)] + listas[0]
         organiza_lista_chPrincipal(listas[0])
 
@@ -382,16 +314,91 @@ def insercao(listas: list[list], argumento: str, games: io.BufferedWriter):
         games.write(argumento.encode())
 
     else:
-        print("Registro descartado (IDs duplicados não são aceitos).")
+        print("- Registro descartado (IDs duplicados não são aceitos).")
 
     return listas
 
-def remocao():
-    print("Iniciando a remoção...")
+
+def remocao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]], argumento: int, games: io.BufferedRandom) -> list:
+    print(f'Remoção do registro de chave "{argumento}"')
+    pos = busca_binaria_chPrincipal(argumento, listas[0])
+
+    if pos != -1:
+        offset = listas[0][pos].offset
+        listas[0] = listas[0][:pos] + listas[0][pos+1:] # Remocao chPrincipal
+
+        games.seek(offset)
+        tamanho = int.from_bytes(games.read(2),'little')
+        registro = games.read(tamanho).decode().split('|')
+
+        genero = registro[3]
+        publicadora = registro[4]
+        
+        posSec = busca_binaria_chSecundaria(genero, listas[1])
+        posInv = listas[1][posSec].indice
+        if listas[3][posInv].proxGenero == -1:
+            listas[1] = listas[1][:posSec] + listas[1][posSec + 1:] # Remocao de 1 genero, se só tinha um caso
+
+        elif listas[3][posInv].indice == argumento:
+            listas[1][posSec].indice = listas[3][posInv].proxGenero # Alteracao do primeiro caso, se comece com o removido
+
+        else:
+            while listas[3][listas[3][posInv].proxGenero].indice != argumento: # Anda até o proximo ser o jogo a ser removido
+                posInv = listas[3][posInv].proxGenero
+            listas[3][posInv].proxGenero = listas[3][listas[3][posInv].proxGenero].proxGenero
+        
+
+        posSec = busca_binaria_chSecundaria(publicadora, listas[2])
+        posInv = listas[2][posSec].indice
+        if listas[3][posInv].proxPublicadora == -1:
+            listas[2] = listas[2][:posSec] + listas[2][posSec + 1:] 
+
+        elif listas[3][posInv].indice == argumento:
+            listas[2][posSec].indice = listas[3][posInv].proxPublicadora
+
+        else:
+            while listas[3][listas[3][posInv].proxPublicadora].indice != argumento: 
+                posInv = listas[3][posInv].proxPublicadora
+            listas[3][posInv].proxPublicadora = listas[3][listas[3][posInv].proxPublicadora].proxPublicadora
+
+
+
+        #JHONATAN ME AJUDA
+
+        for i in range(len(listas[3])):
+            if listas[3][i].indice == argumento:
+                pos = i
+                break
+
+        listas[3] = listas[3][:pos] + listas[3][pos+1:] # Remocao chInvertida
+
+        for i in listas[1]:
+            if i.indice > pos:
+                i.indice -= 1
+
+        for i in listas[2]:
+            if i.indice > pos:
+                i.indice -= 1
+
+        for i in listas[3]:
+            if i.proxGenero > pos:
+                i.proxGenero -= 1
+            if i.proxPublicadora > pos:
+                i.proxPublicadora -= 1
+
+
+
+
+        games.seek(offset + 2)
+        games.write(b'*')
+        print(f'- "{registro[1]}" removido.')
+    else:
+        print("- Registro não encontrado!")
+
+    return listas
+
 
 def compactar_arquivo():
-    print("Iniciando a compactação do arquivo...")
-    
     primarioLista: list[ChavePrincipal] = []
     registro:list[str] = []
     validos:list = []
@@ -404,9 +411,7 @@ def compactar_arquivo():
             regi1 = gamesDat.read(tamanho)
             regi2 = regi1.decode()
             registro = regi2.split("|")
-            print(registro)
             id_str = registro[0]
-            print(id_str)
             if not id_str.startswith("*"):
                 validos.append(regi1)
             buffer = gamesDat.read(2)
@@ -436,31 +441,24 @@ def compactar_arquivo():
             primario.write(linha) 
 
 
-##FUNÇÃO PRINCIPAL DA EXECUÇÃO DAS OPERAÇÕES
 def executar_operacoes(nome_arquivo):
-    print(f"Executando operações do arquivo: {nome_arquivo}")
+    print(f"\n-------> Executando operações do arquivo: {nome_arquivo} <-------\n")
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as f:
-            gamesR = open("games.dat", 'rb')
 
             listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices]] = [[], [], [], []]
 
-            arq = open("primario.ind", 'rb')
-            listas[0] = carrega_indices(arq, 1)
-            arq.close()
-
-            arq = open("genero.ind", 'rb')
-            listas[1] = carrega_indices(arq, 2)
-            arq.close()
-
-            arq = open("publicadora.ind", 'rb')
-            listas[2] = carrega_indices(arq, 2)
-            arq.close()
-
-            arq = open("listaInvertida.lst", 'rb')
-            listas[3] = carrega_indices(arq, 3)
-            arq.close()
+            with open("primario.ind", 'rb') as arq:
+                listas[0] = carrega_indices(arq, 1)
+            with open("genero.ind", 'rb') as arq:
+                listas[1] = carrega_indices(arq, 2)
+            with open("publicadora.ind", 'rb') as arq:
+                listas[2] = carrega_indices(arq, 2)
+            with open("listaInvertida.lst", 'rb') as arq:
+                listas[3] = carrega_indices(arq, 3)
             
+            games = open("games.dat", 'r+b')
+
             for linha in f:
                 linha = linha.strip()
 
@@ -468,48 +466,49 @@ def executar_operacoes(nome_arquivo):
                     continue  # pula linha vazia
                 
                 partes = linha.split(" ", 1)
+
+                if len(partes) < 2:
+                    continue
+
                 operacao = partes[0]
                 argumento = partes[1]
 
                 if operacao == 'bp':
-                    busca_indice_primario(int(argumento), listas)
-
+                    busca_indice_primario(listas, int(argumento), games)
                 elif operacao == 'bs1':
-                    busca_indice_genero(str(argumento), listas)
-
+                    busca_indice_secundario(listas, 1, str(argumento), games)
                 elif operacao == 'bs2':
-                    busca_indice_publicadora(str(argumento), listas)
-
+                    busca_indice_secundario(listas, 2, str(argumento), games)
                 elif operacao == 'i':
-                    gamesW = open("games.dat", 'ab')
-                    listas = insercao(listas, str(argumento), gamesW)
-                    gamesW.close() 
-
+                    listas = insercao(listas, str(argumento), games)
                 elif operacao == "r":
-                    remocao(argumento)
+                    listas = remocao(listas, int(argumento), games)
 
                 else:
                     print("Comando não identificado. Por favor, verifique o arquivo de operações.")   
+                print("")
+
+            games.close()
 
             with open("primario.ind", "wb") as primario:
                 for i in listas[0]:
                     linha = struct.pack(fmtPrimario, i.indice, i.offset)
-                    primario.write(linha) 
+                    primario.write(linha)
+
+            with open("genero.ind", "wb") as genero:
+                for i in listas[1]:
+                    linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
+                    genero.write(linha)
 
             with open("publicadora.ind", "wb") as publicadora:
                 for i in listas[2]:
                     linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
-                    publicadora.write(linha) 
-                    
-            with open("genero.ind", "wb") as genero:
-                for i in listas[1]:
-                    linha = struct.pack(fmtSecundario, i.nome.encode(), i.indice)
-                    genero.write(linha) 
+                    publicadora.write(linha)
 
             with open("listaInvertida.lst", "wb") as listaTotal:
                 for i in listas[3]:
                     linha = struct.pack(fmtInvertido, i.indice, i.proxGenero, i.proxPublicadora)
-                    listaTotal.write(linha)  
+                    listaTotal.write(linha)
 
     except FileNotFoundError:
         print("Erro: arquivo de operações não encontrado.")
@@ -525,7 +524,6 @@ def main():
     if flag == '-b':
         construir_indices()
         
-
     elif flag == '-e':
         if len(sys.argv) < 3:
             print("Erro: Para usar -e, você deve informar o arquivo de operações.")
