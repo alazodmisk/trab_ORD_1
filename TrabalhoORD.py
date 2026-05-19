@@ -187,6 +187,13 @@ def construir_indices():
 
 
 def carrega_indices(arq: io.BufferedReader, codigo: int):
+    '''A função carrega_indices realiza a leitura de arquivos de índices binários, 
+    carregando seus registros para uma lista de objetos. 
+    O tipo de índice a ser lido é definido pelo parâetro codigo, determinando o formato e o tamanho de cada registro. 
+    Durante a leitura, os dados binários são desempacotados com struct.unpack e 
+    convertidos em objetos específicos (ChavePrincipal, ChaveSecundaria ou Indices). 
+    No caso das chaves secundárias, o nome é decodificado e tratado para remover caracteres nulos. 
+    Ao final, a função retorna a lista contendo todos os índices carregados do arquivo.'''
     lista: list[ChavePrincipal| ChaveSecundaria |Indices] = []
 
     if codigo == 1:
@@ -397,7 +404,13 @@ def remocao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices
 
 
 def compactar_arquivo():
-    ''' '''
+    '''A função compactar_arquivo realiza a compactação lógica do arquivo games.dat, 
+    removendo registros marcados como excluídos. 
+    Inicialmente, o arquivo é aberto em modo leitura binária e cada registro é lido a partir do seu tamanho 
+    armazenado nos dois primeiros bytes. Em seguida, os dados do registro são decodificados e separados utilizando 
+    o caractere "|", permitindo verificar se o ID do registro começa com "*", indicador de remoção lógica. Apenas 
+    os registros válidos são armazenados em uma lista temporária. Por fim, o arquivo é reescrito em modo binário 
+    contendo somente os registros válidos, preservando o formato original de armazenamento.'''
     registro:list[str] = []
     validos:list = []
     
