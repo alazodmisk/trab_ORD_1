@@ -8,6 +8,7 @@ fmtPrimario = '<HI'
 fmtSecundario = '30sH'
 fmtInvertido = '<3h'
 
+
 class ChavePrincipal:
     def __init__(self, indice: int, offset: int):
         self.indice = indice
@@ -364,8 +365,7 @@ def remocao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices
 
 
         #JHONATAN ME AJUDA
-
-        for i in range(len(listas[3])):
+        '''for i in range(len(listas[3])):
             if listas[3][i].indice == argumento:
                 pos = i
                 break
@@ -384,9 +384,7 @@ def remocao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices
             if i.proxGenero > pos:
                 i.proxGenero -= 1
             if i.proxPublicadora > pos:
-                i.proxPublicadora -= 1
-
-
+                i.proxPublicadora -= 1'''
 
 
         games.seek(offset + 2)
@@ -399,10 +397,10 @@ def remocao(listas: list[list[ChavePrincipal]|list[ChaveSecundaria]|list[Indices
 
 
 def compactar_arquivo():
-    primarioLista: list[ChavePrincipal] = []
+    ''' '''
     registro:list[str] = []
     validos:list = []
-    offset = 0
+    
 
     with open('games.dat', 'rb') as gamesDat:
         buffer = gamesDat.read(2)
@@ -422,23 +420,6 @@ def compactar_arquivo():
             tam = len(registro).to_bytes(2, 'little')
             gamesCompactados.write(tam)
             gamesCompactados.write(registro)
-
-    with open('games.dat', 'rb') as gamesDat2:
-        buffer = gamesDat2.read(2)
-        while buffer != b'':
-            tam = int.from_bytes(buffer, "little")
-            regi = gamesDat2.read(tam).decode()
-            registro:list[str] = regi.split("|") #[ID, Nome, Ano, Genero, Publicadora, Plataforma]
-            indice = int(registro[0])
-            primarioLista = [ChavePrincipal(indice, offset)] + primarioLista
-            organiza_lista_chPrincipal(primarioLista)
-            offset += tam + 2
-            buffer = gamesDat2.read(2)
-
-    with open("primario.ind", "wb") as primario:
-        for i in primarioLista:
-            linha = struct.pack(fmtPrimario, i.indice, i.offset)
-            primario.write(linha) 
 
 
 def executar_operacoes(nome_arquivo):
@@ -533,6 +514,7 @@ def main():
 
     elif flag == '-c':
         compactar_arquivo()
+        construir_indices()
         
     else:
         print(f"Flag '{flag}' não reconhecida.")
