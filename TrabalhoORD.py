@@ -223,22 +223,7 @@ def carrega_indices(arq: io.BufferedReader, codigo: int):
     return lista
 
 def busca_indice_primario(listas: list[ChavePrincipal], argumento: int, games: io.BufferedRandom):
-    '''Função carregar_indice_primario() utilizada para ler o arquivo "primario.ind"
-    e transformar cada linha em um objeto do tipo ChavePrincipal, armazenando-os
-    em uma lista.
 
-    Cada linha do arquivo deve estar no formato:
-        <indice> <offset>
-
-    Onde:
-        - indice: identificador único do registro
-        - offset: posição em bytes do registro no arquivo "games.dat"
-
-    A função ignora linhas vazias e converte os valores para inteiro antes de
-    criar os objetos.
-
-    Retorna:
-    - lista contendo objetos ChavePrincipal com indice e offset correspondentes'''
     primarioLista: list[ChavePrincipal] = listas[0]
 
     print(f'Buscando registro de ID "{argumento}"')
